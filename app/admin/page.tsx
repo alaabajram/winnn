@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { winnn, dateFmt } from "@/lib/format";
-import { Pill, statusTone } from "@/components/admin/ui";
+import { Pill } from "@/components/admin/ui";
+import { statusTone } from "@/lib/status";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
