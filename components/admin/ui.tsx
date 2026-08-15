@@ -74,26 +74,7 @@ export function Pill(props: { children: React.ReactNode; tone?: string }) {
   );
 }
 
-export function statusTone(s: string) {
-  const map: any = {
-    LIVE: "bg-tertiary-fixed/40 text-on-tertiary-fixed",
-    ACTIVE: "bg-tertiary-fixed/40 text-on-tertiary-fixed",
-    PAID: "bg-tertiary-fixed/40 text-on-tertiary-fixed",
-    PUBLISHED: "bg-tertiary-fixed/40 text-on-tertiary-fixed",
-    DRAFT: "bg-surface-container text-on-surface-variant",
-    SCHEDULED: "bg-primary-fixed text-on-primary-fixed",
-    SENT: "bg-primary-fixed text-on-primary-fixed",
-    SALES_CLOSED: "bg-secondary-container text-on-secondary-container",
-    PAUSED: "bg-secondary-container text-on-secondary-container",
-    OVERDUE: "bg-error-container text-on-error-container",
-    VOID: "bg-error-container text-on-error-container",
-    CANCELLED: "bg-error-container text-on-error-container",
-    DISABLED: "bg-error-container text-on-error-container",
-    COMPLETED: "bg-primary-container text-on-primary",
-    ARCHIVED: "bg-surface-variant text-on-surface-variant",
-  };
-  return map[s] || "bg-surface-container text-on-surface-variant";
-}
+export { statusTone } from "@/lib/status";
 
 export function Banner(props: { kind: "error" | "ok"; children: React.ReactNode }) {
   const ok = props.kind === "ok";
