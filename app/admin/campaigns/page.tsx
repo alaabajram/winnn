@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { winnn, dateFmt } from "@/lib/format";
-import { Pill, statusTone, Card } from "@/components/admin/ui";
+import { Pill, Card } from "@/components/admin/ui";
+import { statusTone } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
