@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { FIELD, Field, Card, Btn, Pill, statusTone, Banner, cleanError } from "./ui";
+import ImageUpload from "./image-upload";
 
 const EMPTY: any = {
   id: "", name: "", slug: "", category: "", description: "", address: "",
@@ -90,13 +91,19 @@ export default function MerchantsClient(props: { initial: any[] }) {
         </Card>
 
         <Card title="Profile images">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Logo URL" hint="Square. Used on ticket artwork and merchant lists.">
-              <input className={FIELD} placeholder="https://" value={form.logo_url || ""} onChange={(e) => set("logo_url", e.target.value)} />
-            </Field>
-            <Field label="Cover image URL" hint="Wide banner for the merchant profile.">
-              <input className={FIELD} placeholder="https://" value={form.cover_url || ""} onChange={(e) => set("cover_url", e.target.value)} />
-            </Field>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <ImageUpload
+              slot="merchant_logo"
+              folder="merchants"
+              value={form.logo_url || ""}
+              onChange={(url) => set("logo_url", url)}
+            />
+            <ImageUpload
+              slot="merchant_cover"
+              folder="merchants"
+              value={form.cover_url || ""}
+              onChange={(url) => set("cover_url", url)}
+            />
           </div>
         </Card>
 
