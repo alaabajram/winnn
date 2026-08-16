@@ -19,7 +19,10 @@ export default function Shell(props: {
   children: React.ReactNode;
   balance: string | null;
   name: string | null;
+  logoUrl?: string | null;
+  siteName?: string | null;
 }) {
+  const brand = props.siteName || "Winnn";
   const path = usePathname();
 
   // Routes that render their own chrome. The admin console has its own fixed
@@ -33,12 +36,24 @@ export default function Shell(props: {
     <>
       <aside className="fixed left-0 top-0 z-50 hidden h-full w-64 flex-col bg-primary-container py-8 shadow-2xl lg:flex">
         <div className="mb-12 flex items-center gap-3 px-8">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-container">
-            <span className="font-display text-headline-sm text-on-secondary-container">W</span>
-          </div>
-          <span className="font-headline text-headline-md uppercase tracking-widest text-primary-fixed">
-            Winnn
-          </span>
+          {props.logoUrl ? (
+            <img
+              src={props.logoUrl}
+              alt={brand}
+              className="h-10 w-auto max-w-[150px] object-contain"
+            />
+          ) : (
+            <>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-container">
+                <span className="font-display text-headline-sm text-on-secondary-container">
+                  {brand.slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+              <span className="font-headline text-headline-md uppercase tracking-widest text-primary-fixed">
+                {brand}
+              </span>
+            </>
+          )}
         </div>
         <nav className="flex-1 space-y-2 px-4">
           {NAV.map((it) => (
@@ -67,14 +82,26 @@ export default function Shell(props: {
 
       <div className="lg:pl-64">
         <header className="fixed left-0 right-0 top-0 z-40 flex h-20 items-center justify-between bg-surface/80 px-margin-mobile shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:left-64 lg:px-margin-desktop">
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-container">
-              <span className="font-display text-label-bold text-secondary-fixed">W</span>
-            </div>
-            <span className="font-headline text-headline-sm uppercase tracking-widest text-on-surface">
-              Winnn
-            </span>
-          </div>
+          <Link href="/" className="flex items-center gap-2 lg:hidden">
+            {props.logoUrl ? (
+              <img
+                src={props.logoUrl}
+                alt={brand}
+                className="h-9 w-auto max-w-[130px] object-contain"
+              />
+            ) : (
+              <>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-container">
+                  <span className="font-display text-label-bold text-secondary-fixed">
+                    {brand.slice(0, 1).toUpperCase()}
+                  </span>
+                </div>
+                <span className="font-headline text-headline-sm uppercase tracking-widest text-on-surface">
+                  {brand}
+                </span>
+              </>
+            )}
+          </Link>
 
           <div className="flex flex-1 items-center justify-end gap-4 lg:flex-none">
             <CartButton />
