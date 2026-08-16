@@ -124,6 +124,30 @@ export default async function Home() {
         </section>
       ) : null}
 
+      <Link
+        href="/how-it-works"
+        className="group mb-12 flex flex-col items-start justify-between gap-5 rounded-[24px] bg-surface-container p-6 transition-colors hover:bg-surface-container-high sm:flex-row sm:items-center sm:p-8"
+      >
+        <div className="flex items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-tertiary-fixed text-on-tertiary-fixed">
+            <span className="material-symbols-outlined">help</span>
+          </span>
+          <div>
+            <p className="font-headline text-headline-sm text-on-surface">New to Winnn?</p>
+            <p className="mt-1 font-body text-body-md text-on-surface-variant">
+              Two ways in: buy credits online, or pick up a free voucher in a partner shop. Both enter
+              the same physical draw.
+            </p>
+          </div>
+        </div>
+        <span className="flex shrink-0 items-center gap-2 rounded-xl bg-primary-container px-5 py-3 font-label text-label-bold uppercase tracking-widest text-secondary-fixed">
+          See how
+          <span className="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">
+            arrow_forward
+          </span>
+        </span>
+      </Link>
+
       <div className="mb-8 flex items-center gap-4">
         <h2 className="font-headline text-headline-md tracking-tight text-on-background">Active campaigns</h2>
         <div className="h-px flex-1 bg-gradient-to-r from-outline-variant/30 to-transparent" />
