@@ -22,6 +22,7 @@ export default function CampaignEditor(props: {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [id, setId] = useState<string>(c ? c.id : "");
+  const [live, setLive] = useState<{ slug: string } | null>(null);
 
   const [f, setF] = useState<any>({
     name: c ? c.name : "",
@@ -122,7 +123,16 @@ export default function CampaignEditor(props: {
     }
 
     setBusy(false);
-    setMsg({ kind: "ok", text: alsoStatus ? "Saved and set to " + alsoStatus + "." : "Campaign saved." });
+    if (alsoStatus === "LIVE") {
+      setLive({ slug: (res.data as any).slug });
+      setMsg(null);
+    } else {
+      setLive(null);
+      setMsg({
+        kind: "ok",
+        text: alsoStatus ? "Saved and set to " + alsoStatus + "." : "Campaign saved as a draft.",
+      });
+    }
     if (!c) router.replace("/admin/campaigns/" + newId);
     router.refresh();
   }
@@ -149,6 +159,44 @@ export default function CampaignEditor(props: {
           <Btn onClick={() => save("LIVE")} disabled={busy || !f.name}>Save and go live</Btn>
         </div>
       </div>
+
+      {live ? (
+        <div className="relative overflow-hidden rounded-3xl bg-primary-container p-6 text-on-primary-container shadow-xl sm:p-8">
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-secondary/20 blur-3xl" />
+          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="material-symbols-outlined text-[36px] text-secondary-fixed">
+                rocket_launch
+              </span>
+              <div>
+                <p className="font-headline text-headline-md text-on-primary">
+                  This campaign is now live
+                </p>
+                <p className="mt-1 font-body text-body-md text-on-primary-container">
+                  Customers can see it on the home page and start entering. Entries close on the date
+                  you set; generate voucher batches before then if it accepts in-store entries.
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-3">
+              <a
+                href={"/campaigns/" + live.slug}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl bg-secondary-container px-5 py-3 font-label text-label-bold uppercase tracking-widest text-on-secondary-container"
+              >
+                View page
+              </a>
+              <a
+                href="/admin/vouchers"
+                className="rounded-xl bg-surface/10 px-5 py-3 font-label text-label-bold uppercase tracking-widest text-on-primary backdrop-blur-sm"
+              >
+                Vouchers
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {msg ? <Banner kind={msg.kind}>{msg.text}</Banner> : null}
 
