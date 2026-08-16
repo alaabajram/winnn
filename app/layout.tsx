@@ -47,6 +47,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const sb = await supabaseServer();
   const { data: auth } = await sb.auth.getUser();
 
+  const { data: settingsRow } = await sb
+    .from("site_settings").select("site_name,logo_url").maybeSingle();
+  const settings: any = settingsRow || {};
+
   let balance: string | null = null;
   let name: string | null = null;
   if (auth && auth.user) {
@@ -73,7 +77,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <CartProvider>
-          <Shell balance={balance} name={name}>
+          <Shell
+            balance={balance}
+            name={name}
+            logoUrl={settings.logo_url || null}
+            siteName={settings.site_name || "Winnn"}
+          >
             {children}
           </Shell>
         </CartProvider>
