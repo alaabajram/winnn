@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { FIELD, Field, Card, Btn, Banner, Section, cleanError } from "./ui";
+import ImageUpload from "./image-upload";
 
 export default function SettingsClient(props: { initial: any }) {
   const [f, setF] = useState<any>(props.initial);
@@ -47,12 +48,12 @@ export default function SettingsClient(props: { initial: any }) {
           <Field label="Short description" wide hint="Used as the default meta description and in the app manifest.">
             <textarea className={FIELD} rows={2} value={f.description || ""} onChange={(e) => set("description", e.target.value)} />
           </Field>
-          <Field label="Logo URL">
-            <input className={FIELD} placeholder="https://" value={f.logo_url || ""} onChange={(e) => set("logo_url", e.target.value)} />
-          </Field>
-          <Field label="Favicon URL">
-            <input className={FIELD} placeholder="https://" value={f.favicon_url || ""} onChange={(e) => set("favicon_url", e.target.value)} />
-          </Field>
+          <div className="sm:col-span-2 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <ImageUpload slot="site_logo" folder="site" value={f.logo_url || ""}
+              onChange={(url) => set("logo_url", url)} />
+            <ImageUpload slot="favicon" folder="site" value={f.favicon_url || ""}
+              onChange={(url) => set("favicon_url", url)} />
+          </div>
           <Field label="Primary colour" hint="Deep brand colour used for the sidebar and hero panels.">
             <div className="flex gap-3">
               <input type="color" className="h-12 w-14 rounded-lg" value={f.brand_primary || "#0d1c32"}
