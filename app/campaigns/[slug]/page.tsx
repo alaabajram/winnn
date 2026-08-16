@@ -13,7 +13,7 @@ export default async function Campaign(props: any) {
 
   const { data } = await sb
     .from("campaigns")
-    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,ticket_price_cents,campaign_prizes(position,title,value_cents),campaign_merchants(merchants(name,category,address))")
+    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,ticket_price_cents,hero_image_url,sponsor_logo_url,campaign_prizes(position,title,value_cents),campaign_merchants(merchants(name,category,address))")
     .eq("slug", slug)
     .maybeSingle();
   if (!data) notFound();
@@ -46,7 +46,11 @@ export default async function Campaign(props: any) {
       </Link>
 
       <section className="relative mb-8 w-full overflow-hidden rounded-[24px] shadow-2xl">
-        <div className={"absolute inset-0 " + artFor(c.slug)} />
+        {c.hero_image_url ? (
+          <img src={c.hero_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className={"absolute inset-0 " + artFor(c.slug)} />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/10" />
         <div className="relative z-10 flex min-h-[360px] flex-col justify-end p-8 sm:p-12">
           <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-surface/20 bg-surface/10 px-4 py-1.5 backdrop-blur-md">
