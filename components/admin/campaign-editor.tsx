@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { FIELD, Field, Card, Btn, Pill, statusTone, Banner, Section, cleanError } from "./ui";
 import { toCents } from "@/lib/money";
+import ImageUpload from "./image-upload";
 import { winnn } from "@/lib/format";
 
 function dtLocal(v: string | null) {
@@ -32,6 +33,7 @@ export default function CampaignEditor(props: {
     ticket_price: c ? (Number(c.ticket_price_cents) / 100).toString() : "10",
     owner_merchant_id: c ? c.owner_merchant_id || "" : "",
     hero_image_url: c ? c.hero_image_url || "" : "",
+    thumbnail_url: c ? c.thumbnail_url || "" : "",
     banner_url: c ? c.banner_url || "" : "",
     sponsor_logo_url: c ? c.sponsor_logo_url || "" : "",
     brand_color: c ? c.brand_color || "" : "",
@@ -77,6 +79,7 @@ export default function CampaignEditor(props: {
       ticket_price_cents: String(toCents(f.ticket_price)),
       owner_merchant_id: f.owner_merchant_id || null,
       hero_image_url: f.hero_image_url,
+      thumbnail_url: f.thumbnail_url,
       banner_url: f.banner_url,
       sponsor_logo_url: f.sponsor_logo_url,
       brand_color: f.brand_color,
@@ -322,16 +325,18 @@ export default function CampaignEditor(props: {
       </Section>
 
       <Section title="Media" open={false}>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Hero image URL" hint="Wide. Behind the campaign headline.">
-            <input className={FIELD} placeholder="https://" value={f.hero_image_url} onChange={(e) => set("hero_image_url", e.target.value)} />
-          </Field>
-          <Field label="Ticket banner URL" hint="Artwork printed across the voucher.">
-            <input className={FIELD} placeholder="https://" value={f.banner_url} onChange={(e) => set("banner_url", e.target.value)} />
-          </Field>
-          <Field label="Sponsor logo URL" hint="Printed on the voucher and shown on the card.">
-            <input className={FIELD} placeholder="https://" value={f.sponsor_logo_url} onChange={(e) => set("sponsor_logo_url", e.target.value)} />
-          </Field>
+        <p className="mb-6 font-body text-body-md text-on-surface-variant">
+          Each slot shows its recommended size. Anything off-ratio is accepted but will be cropped.
+        </p>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <ImageUpload slot="campaign_hero" folder="campaigns"
+            value={f.hero_image_url} onChange={(url) => set("hero_image_url", url)} />
+          <ImageUpload slot="campaign_thumb" folder="campaigns"
+            value={f.thumbnail_url} onChange={(url) => set("thumbnail_url", url)} />
+          <ImageUpload slot="campaign_banner" folder="campaigns"
+            value={f.banner_url} onChange={(url) => set("banner_url", url)} />
+          <ImageUpload slot="sponsor_logo" folder="campaigns"
+            value={f.sponsor_logo_url} onChange={(url) => set("sponsor_logo_url", url)} />
         </div>
       </Section>
 
@@ -365,9 +370,10 @@ export default function CampaignEditor(props: {
             <input className={FIELD} placeholder="lucky draw lebanon, win a car beirut" value={f.keywords}
               onChange={(e) => set("keywords", e.target.value)} />
           </Field>
-          <Field label="Share image URL" hint="1200x630 for WhatsApp and social previews.">
-            <input className={FIELD} placeholder="https://" value={f.og_image_url} onChange={(e) => set("og_image_url", e.target.value)} />
-          </Field>
+          <div className="max-w-md">
+            <ImageUpload slot="campaign_og" folder="campaigns"
+              value={f.og_image_url} onChange={(url) => set("og_image_url", url)} />
+          </div>
           <Field
             label="AI summary"
             hint="A factual paragraph an assistant can quote: the prize, how to enter, the closing date, and that the draw is physical."
