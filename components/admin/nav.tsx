@@ -31,7 +31,8 @@ const GROUPS = [
   },
 ];
 
-export default function AdminNav() {
+export default function AdminNav(props: { logoUrl?: string | null; siteName?: string | null }) {
+  const brand = props.siteName || "Winnn";
   const path = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -43,15 +44,25 @@ export default function AdminNav() {
   const body = (
     <>
       <div className="mb-10 flex items-center gap-3 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-container">
-          <span className="font-display text-headline-sm text-on-secondary-container">W</span>
-        </div>
-        <div>
-          <p className="font-headline text-headline-sm uppercase tracking-widest text-primary-fixed">
-            Winnn
-          </p>
+        {props.logoUrl ? (
+          <img src={props.logoUrl} alt={brand} className="h-10 w-auto max-w-[140px] object-contain" />
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-container">
+            <span className="font-display text-headline-sm text-on-secondary-container">
+              {brand.slice(0, 1).toUpperCase()}
+            </span>
+          </div>
+        )}
+        {!props.logoUrl ? (
+          <div>
+            <p className="font-headline text-headline-sm uppercase tracking-widest text-primary-fixed">
+              {brand}
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-on-primary-container">Admin</p>
+          </div>
+        ) : (
           <p className="text-[10px] uppercase tracking-widest text-on-primary-container">Admin</p>
-        </div>
+        )}
       </div>
 
       <nav className="flex-1 space-y-6 px-3">
