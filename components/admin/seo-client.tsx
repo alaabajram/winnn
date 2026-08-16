@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { FIELD, Field, Card, Btn, Pill, Banner, cleanError } from "./ui";
+import ImageUpload from "./image-upload";
 
 /** Green when inside the range search engines actually render. */
 function Counter(props: { value: string; max: number; min?: number }) {
@@ -76,10 +77,10 @@ export default function SeoClient(props: { settings: any; campaigns: any[] }) {
             <textarea className={FIELD} rows={2} value={f.default_meta_description || ""}
               onChange={(e) => set("default_meta_description", e.target.value)} />
           </div>
-          <Field label="Default share image URL" hint="1200x630. Used when a campaign has no own image.">
-            <input className={FIELD} placeholder="https://" value={f.default_og_image_url || ""}
-              onChange={(e) => set("default_og_image_url", e.target.value)} />
-          </Field>
+          <div className="max-w-md">
+            <ImageUpload slot="og_default" folder="site" value={f.default_og_image_url || ""}
+              onChange={(url) => set("default_og_image_url", url)} />
+          </div>
         </div>
       </Card>
 
