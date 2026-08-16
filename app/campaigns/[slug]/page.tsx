@@ -138,7 +138,16 @@ export default async function Campaign(props: any) {
         ))}
       </div>
 
-      <h2 className="mb-4 font-headline text-headline-md text-on-background">How to enter</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-headline text-headline-md text-on-background">How to enter</h2>
+        <Link
+          href="/how-it-works"
+          className="flex items-center gap-1 font-label text-label-bold text-primary hover:underline"
+        >
+          Full walkthrough
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </Link>
+      </div>
       <div className="mb-10 grid grid-cols-1 gap-gutter md:grid-cols-2">
         {c.type !== "OFFLINE" ? (
           <div className="flex flex-col rounded-3xl bg-surface-container-lowest p-8 shadow-md">
