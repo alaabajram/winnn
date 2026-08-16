@@ -5,11 +5,14 @@ import AdminNav from "@/components/admin/nav";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { admin, user } = await requireAdmin();
+  const { admin, user, sb } = await requireAdmin();
+  const { data: settingsRow } = await sb
+    .from("site_settings").select("site_name,logo_url").maybeSingle();
+  const settings: any = settingsRow || {};
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminNav />
+      <AdminNav logoUrl={settings.logo_url || null} siteName={settings.site_name || "Winnn"} />
       <div className="lg:pl-72">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-outline-variant/30 bg-surface/90 px-5 backdrop-blur-xl lg:px-8">
           <Link
