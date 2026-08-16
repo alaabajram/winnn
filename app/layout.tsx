@@ -6,14 +6,35 @@ import RegisterSW from "@/components/register-sw";
 import { supabaseServer } from "@/lib/supabase/server";
 import { winnn } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Winnn - Buy Credits. Get Tickets. Win.",
-  description:
-    "Lucky draw campaigns with local Lebanese businesses. Buy Winnn credits or scan a voucher from a partner store.",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Winnn" },
-  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const sb = await supabaseServer();
+  const { data } = await sb
+    .from("site_settings")
+    .select("site_name,tagline,description,favicon_url,default_og_image_url")
+    .maybeSingle();
+  const s: any = data || {};
+  const name = s.site_name || "Winnn";
+  const title = s.tagline ? name + " - " + s.tagline : name;
+  const description =
+    s.description ||
+    "Lucky draw campaigns with local Lebanese businesses. Buy Winnn credits or scan a voucher from a partner store.";
+
+  return {
+    title,
+    description,
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: name },
+    icons: {
+      icon: s.favicon_url || "/icon-192.png",
+      apple: s.favicon_url || "/icon-192.png",
+    },
+    openGraph: {
+      title,
+      description,
+      images: s.default_og_image_url ? [s.default_og_image_url] : undefined,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#f8f9fa",
