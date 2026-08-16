@@ -17,7 +17,7 @@ export default async function Store(props: any) {
 
   let q = sb
     .from("products")
-    .select("id,name,slug,description,price_cents,stock,is_featured,category_id")
+    .select("id,name,slug,description,price_cents,stock,is_featured,category_id,images")
     .eq("status", "ACTIVE");
   if (activeCat) {
     const match = cats.find((c) => c.slug === activeCat);
@@ -116,7 +116,15 @@ export default async function Store(props: any) {
               className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] bg-surface-container-lowest p-4 shadow-sm transition-all duration-500 hover:shadow-xl"
             >
               <Link href={"/store/" + p.slug} className="relative mb-6 block aspect-square w-full overflow-hidden rounded-[1.5rem] bg-surface-container">
-                <div className={"h-full w-full transition-transform duration-700 group-hover:scale-110 " + artFor(p.slug)} />
+                {p.images && (p.images as any[]).length ? (
+                  <img
+                    src={(p.images as any[])[0]}
+                    alt=""
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className={"h-full w-full transition-transform duration-700 group-hover:scale-110 " + artFor(p.slug)} />
+                )}
                 {p.is_featured ? (
                   <div className="absolute bottom-4 left-4 rounded-full bg-primary-container px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-primary-container shadow-md">
                     Featured
