@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { winnn, dateFmt } from "@/lib/format";
 import SignOut from "@/components/sign-out";
+import AddressBook from "@/components/address-book";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export default async function Profile() {
     .select("id,serial,source,status,campaign_id,campaigns(name,slug,draw_date)")
     .in("status", ["ELIGIBLE", "WINNER", "AWAITING_CLAIM"]);
   const tickets: any[] = (ticketRows as any[]) || [];
+
+  const { data: addressRows } = await sb
+    .from("customer_addresses").select("*").order("is_default", { ascending: false });
 
   const { data: orderRows } = await sb
     .from("orders")
@@ -222,6 +226,8 @@ export default async function Profile() {
               </div>
             )}
           </div>
+
+          <AddressBook initial={(addressRows as any[]) || []} />
 
           <div className="mt-4 flex justify-center">
             <div className="w-full max-w-xs">
