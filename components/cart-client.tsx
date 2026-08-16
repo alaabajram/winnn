@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "./cart-provider";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { winnn } from "@/lib/format";
+import AddressForm, { type Address } from "./address-form";
 
 const MESSAGES: any = {
   ERR_INSUFFICIENT_CREDITS: "You do not have enough Winnn for this order.",
@@ -14,24 +15,43 @@ const MESSAGES: any = {
   ERR_EMPTY_CART: "Your cart is empty.",
   ERR_NOT_AUTHENTICATED: "Please sign in to check out.",
   ERR_INVALID_QUANTITY: "Check the quantities and try again.",
+  ERR_SHIPPING_REQUIRED: "Add a delivery address before paying.",
 };
 
-export default function CartClient(props: { balance: number | null; signedIn: boolean }) {
+export default function CartClient(props: {
+  balance: number | null;
+  signedIn: boolean;
+  addresses: Address[];
+}) {
   const cart = useCart();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<any>(null);
+  const [addresses, setAddresses] = useState<Address[]>(props.addresses || []);
+  const [chosen, setChosen] = useState<string>(
+    props.addresses && props.addresses.length
+      ? (props.addresses.find((a) => a.is_default) || props.addresses[0]).id || ""
+      : ""
+  );
+  const [adding, setAdding] = useState(false);
   const router = useRouter();
+
+  const address = addresses.find((a) => a.id === chosen) || null;
 
   const balance = props.balance || 0;
   const short = cart.totalCents - balance;
 
   async function checkout() {
+    if (!address) { setErr("Add a delivery address before paying."); return; }
     setBusy(true);
     setErr(null);
     const res = await supabaseBrowser().rpc("fn_store_checkout", {
       p_items: cart.lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
-      p_shipping: null,
+      p_shipping: {
+        full_name: address.full_name, phone: address.phone,
+        line1: address.line1, line2: address.line2 || null,
+        city: address.city, area: address.area || null, notes: address.notes || null,
+      },
     });
     setBusy(false);
     if (res.error) {
@@ -39,9 +59,19 @@ export default function CartClient(props: { balance: number | null; signedIn: bo
       setErr(k ? MESSAGES[k] : "Checkout failed. Please try again.");
       return;
     }
-    setDone(res.data);
+    const data: any = res.data;
+    setDone(data);
     cart.clear();
     router.refresh();
+
+    // Email is fire-and-forget: a mail outage must not affect a paid order.
+    if (data && data.receipt_id) {
+      fetch("/api/receipts/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: data.receipt_id }),
+      }).catch(() => {});
+    }
   }
 
   if (done) {
@@ -54,6 +84,9 @@ export default function CartClient(props: { balance: number | null; signedIn: bo
         <p className="num mt-3 font-headline text-headline-sm text-on-surface">{done.order_no}</p>
         <p className="mt-2 font-body text-body-md text-on-surface-variant">
           {winnn(done.total_cents)} Winnn was taken from your wallet. Your tickets are unaffected.
+        </p>
+        <p className="mt-3 font-body text-body-md text-on-surface-variant">
+          A receipt is on its way to your email.
         </p>
         <div className="mt-8 flex flex-col gap-3">
           <Link href="/profile" className="rounded-xl bg-primary py-4 font-label text-label-bold uppercase tracking-widest text-on-primary">
@@ -132,7 +165,62 @@ export default function CartClient(props: { balance: number | null; signedIn: bo
         </div>
       </div>
 
+      <div className="mt-8 lg:hidden" />
+
       <aside className="w-full lg:w-96">
+        <div className="mb-4 rounded-3xl bg-surface-container-lowest p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="font-headline text-headline-sm text-on-surface">Delivery address</h2>
+            {addresses.length && !adding ? (
+              <button onClick={() => setAdding(true)}
+                className="font-label text-[12px] font-semibold uppercase tracking-widest text-primary hover:underline">
+                Add new
+              </button>
+            ) : null}
+          </div>
+
+          {!props.signedIn ? (
+            <p className="font-body text-body-md text-on-surface-variant">
+              Sign in to add a delivery address.
+            </p>
+          ) : adding || !addresses.length ? (
+            <AddressForm
+              compact
+              onSaved={(a) => {
+                setAddresses([...addresses.filter((x) => x.id !== a.id), a]);
+                setChosen(a.id || "");
+                setAdding(false);
+                setErr(null);
+              }}
+              onCancel={addresses.length ? () => setAdding(false) : undefined}
+            />
+          ) : (
+            <div className="space-y-2">
+              {addresses.map((a) => (
+                <label key={a.id}
+                  className={
+                    "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors " +
+                    (chosen === a.id
+                      ? "border-primary bg-surface-container"
+                      : "border-outline-variant/40 hover:bg-surface-container")
+                  }>
+                  <input type="radio" className="mt-1" checked={chosen === a.id}
+                    onChange={() => { setChosen(a.id || ""); setErr(null); }} />
+                  <span className="min-w-0">
+                    <span className="block font-label text-label-bold text-on-surface">
+                      {a.label || a.full_name}
+                    </span>
+                    <span className="block font-body text-sm text-on-surface-variant">
+                      {[a.line1, a.area, a.city].filter(Boolean).join(", ")}
+                    </span>
+                    <span className="num block font-body text-sm text-on-surface-variant">{a.phone}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="sticky top-24 rounded-3xl bg-primary-container p-6 text-on-primary-container shadow-2xl">
           <h2 className="font-headline text-headline-sm text-on-primary">Summary</h2>
 
@@ -176,6 +264,12 @@ export default function CartClient(props: { balance: number | null; signedIn: bo
               className="mt-6 block rounded-xl bg-secondary-container py-4 text-center font-label text-label-bold uppercase tracking-widest text-on-secondary-container">
               Buy more Winnn
             </Link>
+          ) : !address ? (
+            <div className="mt-6 rounded-xl bg-surface/10 p-4 text-center backdrop-blur-sm">
+              <p className="font-body text-body-md text-on-primary-container">
+                Add a delivery address to continue.
+              </p>
+            </div>
           ) : (
             <button onClick={checkout} disabled={busy}
               className="mt-6 w-full rounded-xl bg-secondary-fixed py-4 font-label text-label-bold uppercase tracking-widest text-on-secondary-fixed disabled:opacity-40">
