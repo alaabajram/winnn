@@ -11,6 +11,7 @@ const GROUPS = [
       { href: "/admin/campaigns", label: "Campaigns", icon: "campaign" },
       { href: "/admin/vouchers", label: "Vouchers", icon: "confirmation_number" },
       { href: "/admin/draws", label: "Draws", icon: "event_available" },
+      { href: "/admin/invoices", label: "Merchant billing", icon: "request_quote" },
     ],
   },
   {
@@ -18,8 +19,8 @@ const GROUPS = [
     items: [
       { href: "/admin/store", label: "Store", icon: "shopping_bag" },
       { href: "/admin/merchants", label: "Merchants", icon: "storefront" },
-      { href: "/admin/invoices", label: "Invoices", icon: "receipt_long" },
       { href: "/admin/customers", label: "Customers", icon: "group" },
+      { href: "/admin/receipts", label: "Receipts", icon: "receipt_long" },
     ],
   },
   {
