@@ -306,9 +306,10 @@ export default function InvoicesClient(props: {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-display-sm text-on-background">Merchant invoices</h1>
+          <h1 className="font-display text-display-sm text-on-background">Merchant billing</h1>
           <p className="mt-2 font-body text-body-md text-on-surface-variant">
-            What Winnn bills partner businesses. Separate from customer wallets and Winnn credits.
+            B2B. What Winnn charges partner businesses for campaign placement, voucher printing and
+            other services. Customer receipts are separate and are issued automatically.
           </p>
         </div>
         <Btn onClick={() => { setOpen(true); setMsg(null); }}>New invoice</Btn>
