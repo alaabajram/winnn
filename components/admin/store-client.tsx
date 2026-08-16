@@ -5,6 +5,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { FIELD, Field, Card, Btn, Pill, statusTone, Banner, cleanError } from "./ui";
 import { winnn, dateFmt } from "@/lib/format";
 import { toCents } from "@/lib/money";
+import ImageUpload from "./image-upload";
 
 const EMPTY: any = {
   id: "", name: "", slug: "", description: "", category_id: "", price: "",
@@ -130,17 +131,27 @@ export default function StoreClient(props: { products: any[]; cats: any[]; order
         </Card>
 
         <Card title="Images">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {["image1", "image2", "image3"].map((k, i) => (
-              <Field key={k} label={"Image " + (i + 1) + (i === 0 ? " (main)" : "")}>
-                <input className={FIELD} placeholder="https://" value={form[k] || ""}
-                  onChange={(e) => set(k, e.target.value)} />
-              </Field>
+          <p className="mb-6 font-body text-body-md text-on-surface-variant">
+            The first image is shown on the store grid. Leave all three blank to use the generated
+            gradient tile.
+          </p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {(["image1", "image2", "image3"] as const).map((k, i) => (
+              <div key={k}>
+                <ImageUpload
+                  slot="product_image"
+                  folder="products"
+                  value={form[k] || ""}
+                  onChange={(url) => set(k, url)}
+                />
+                {i === 0 ? (
+                  <p className="mt-1 font-label text-[11px] font-semibold uppercase tracking-widest text-secondary">
+                    Main image
+                  </p>
+                ) : null}
+              </div>
             ))}
           </div>
-          <p className="mt-3 font-body text-sm text-on-surface-variant">
-            Leave blank to use the generated gradient tile.
-          </p>
         </Card>
 
         <Card title="Search listing">
