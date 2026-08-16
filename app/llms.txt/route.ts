@@ -82,6 +82,7 @@ export async function GET() {
   lines.push("");
   lines.push("- " + base + "/ : live campaigns and past results");
   lines.push("- " + base + "/store : products purchasable with Winnn credits");
+  lines.push("- " + base + "/how-it-works : step by step for both entry routes");
   lines.push("- " + base + "/sitemap.xml");
 
   return new Response(lines.join("\n"), {
