@@ -5,9 +5,13 @@ import { useEffect, useState } from "react";
  * Install prompt for both platforms.
  *
  * Android/Chrome fires `beforeinstallprompt`, which we capture and replay when
- * the user taps Install. iOS Safari has no such API at all - the only route is
- * Share > Add to Home Screen - so that platform gets illustrated instructions
- * instead of a button.
+ * the user taps Install - a real one-tap install.
+ *
+ * iOS Safari has NO install API. Apple has never shipped one, so no website can
+ * trigger the install dialog. The only route is Share > Add to Home Screen.
+ * What we do instead: a floating "Download app" pill, which opens a full-screen
+ * sheet with the steps and a bouncing arrow pointing at the Share button in the
+ * Safari toolbar. It instructs; it cannot install.
  */
 
 const DISMISS_KEY = "winnn.install.dismissed";
@@ -25,14 +29,22 @@ function isIos() {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent || "";
   const iDevice = /iPad|iPhone|iPod/.test(ua);
-  // iPadOS 13+ reports as Mac; the touch point count gives it away
+  // iPadOS 13+ reports as Macintosh; touch points give it away
   const iPadDesktop = /Macintosh/.test(ua) && (navigator as any).maxTouchPoints > 1;
   return iDevice || iPadDesktop;
 }
 
-function isSafari() {
+function iosSafari() {
   const ua = navigator.userAgent || "";
-  return /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return isIos() && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+}
+
+/** iPhone puts the share button in the bottom toolbar; iPad puts it top right. */
+function shareIsAtBottom() {
+  const ua = navigator.userAgent || "";
+  if (/iPad/.test(ua)) return false;
+  if (/Macintosh/.test(ua) && (navigator as any).maxTouchPoints > 1) return false;
+  return true;
 }
 
 function recentlyDismissed() {
@@ -45,9 +57,21 @@ function recentlyDismissed() {
   }
 }
 
+function ShareIcon(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 24" width="22" height="26" fill="none" className={props.className} aria-hidden="true">
+      <path d="M10 1.5v13M10 1.5L6 5.5M10 1.5l4 4" stroke="currentColor" strokeWidth="1.9"
+        strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 11v11h14V11" stroke="currentColor" strokeWidth="1.9"
+        strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function InstallPrompt(props: { appName?: string; iconUrl?: string | null }) {
-  const [show, setShow] = useState(false);
+  const [mode, setMode] = useState<"hidden" | "pill" | "sheet">("hidden");
   const [ios, setIos] = useState(false);
+  const [bottomShare, setBottomShare] = useState(true);
   const [deferred, setDeferred] = useState<any>(null);
   const [installing, setInstalling] = useState(false);
 
@@ -56,145 +80,169 @@ export default function InstallPrompt(props: { appName?: string; iconUrl?: strin
   useEffect(() => {
     if (isStandalone() || recentlyDismissed()) return;
 
-    // Android and desktop Chrome
     function onBip(e: Event) {
       e.preventDefault();
       setDeferred(e);
-      window.setTimeout(() => setShow(true), 2500);
+      window.setTimeout(() => setMode("pill"), 2500);
     }
     window.addEventListener("beforeinstallprompt", onBip as any);
 
-    // iOS never fires that event, so offer instructions instead
-    if (isIos() && isSafari()) {
-      setIos(true);
-      const t = window.setTimeout(() => setShow(true), 3500);
-      return () => {
-        window.clearTimeout(t);
-        window.removeEventListener("beforeinstallprompt", onBip as any);
-      };
-    }
-
-    function onInstalled() { setShow(false); }
+    function onInstalled() { setMode("hidden"); }
     window.addEventListener("appinstalled", onInstalled);
 
+    let t = 0;
+    if (iosSafari()) {
+      setIos(true);
+      setBottomShare(shareIsAtBottom());
+      t = window.setTimeout(() => setMode("pill"), 3000);
+    }
+
     return () => {
+      if (t) window.clearTimeout(t);
       window.removeEventListener("beforeinstallprompt", onBip as any);
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
 
   function dismiss() {
-    setShow(false);
+    setMode("hidden");
     try { window.localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (e) {}
   }
 
-  async function install() {
+  async function androidInstall() {
     if (!deferred) return;
     setInstalling(true);
     deferred.prompt();
     try { await deferred.userChoice; } catch (e) {}
     setInstalling(false);
     setDeferred(null);
-    setShow(false);
+    setMode("hidden");
   }
 
-  if (!show) return null;
+  if (mode === "hidden") return null;
 
-  const Icon = (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-container shadow-lg">
+  const AppIcon = (size: string) => (
+    <div className={"flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-container shadow-lg " + size}>
       {props.iconUrl ? (
         <img src={props.iconUrl} alt="" className="h-full w-full object-cover" />
       ) : (
-        <span className="font-display text-headline-md text-secondary-fixed">
-          {name.slice(0, 1).toUpperCase()}
-        </span>
+        <span className="font-display text-secondary-fixed">{name.slice(0, 1).toUpperCase()}</span>
       )}
     </div>
   );
 
+  // ---------------------------------------------------------------- the pill
+  if (mode === "pill") {
+    return (
+      <div className="anim-slide-up fixed inset-x-0 bottom-0 z-[60] flex justify-center p-3 pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="relative flex items-center gap-3 rounded-full bg-primary-container py-2 pl-2 pr-3 shadow-2xl">
+          <span className="absolute inset-0 -z-10 rounded-full bg-secondary-container anim-ring" />
+
+          <button
+            onClick={() => (ios ? setMode("sheet") : androidInstall())}
+            disabled={installing}
+            className="flex items-center gap-3"
+          >
+            {AppIcon("h-10 w-10 text-headline-sm")}
+            <span className="text-left">
+              <span className="block font-label text-label-bold uppercase tracking-widest text-secondary-fixed">
+                {installing ? "Installing" : "Download app"}
+              </span>
+              <span className="block font-body text-[11px] text-on-primary-container">
+                {ios ? "Add to your home screen" : "Install " + name}
+              </span>
+            </span>
+            <span className="material-symbols-outlined ml-1 text-secondary-fixed anim-bounce">
+              {ios ? "arrow_downward" : "download"}
+            </span>
+          </button>
+
+          <button
+            onClick={dismiss}
+            aria-label="Dismiss"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-on-primary-container hover:bg-surface/10"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------- iOS instructions
+  const steps = [
+    {
+      n: 1,
+      text: "Tap the Share button in the Safari toolbar",
+      icon: <ShareIcon className="text-primary-container" />,
+    },
+    { n: 2, text: "Scroll down and choose Add to Home Screen", icon: null },
+    { n: 3, text: "Tap Add, top right", icon: null },
+  ];
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[60] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:left-auto sm:right-4 sm:max-w-sm">
-      <div className="relative overflow-hidden rounded-3xl bg-surface-container-lowest p-5 shadow-2xl ring-1 ring-outline-variant/30">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-primary/70 backdrop-blur-sm">
+      <button className="flex-1" onClick={dismiss} aria-label="Close" />
+
+      <div className="anim-slide-up relative rounded-t-[32px] bg-surface px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6">
+        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-outline-variant" />
+
         <button
           onClick={dismiss}
-          aria-label="Dismiss"
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
+          aria-label="Close"
+          className="absolute right-4 top-5 flex h-9 w-9 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
+          <span className="material-symbols-outlined">close</span>
         </button>
 
-        <div className="flex items-start gap-4 pr-8">
-          {Icon}
-          <div className="min-w-0">
-            <p className="font-headline text-headline-sm text-on-surface">Install {name}</p>
-            <p className="mt-1 font-body text-body-md text-on-surface-variant">
-              {ios
-                ? "Add it to your home screen for faster access to your tickets."
-                : "Get it on your home screen. Works offline and opens like an app."}
+        <div className="mb-6 flex items-center gap-4">
+          {AppIcon("h-16 w-16 text-headline-md")}
+          <div>
+            <p className="font-headline text-headline-md text-on-surface">Install {name}</p>
+            <p className="mt-0.5 font-body text-body-md text-on-surface-variant">
+              Free, no App Store needed
             </p>
           </div>
         </div>
 
-        {ios ? (
-          <>
-            <ol className="mt-4 space-y-2.5 rounded-2xl bg-surface-container p-4">
-              <li className="flex items-center gap-3">
-                <span className="num flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-container font-label text-[11px] text-secondary-fixed">
-                  1
-                </span>
-                <span className="flex items-center gap-1.5 font-body text-body-md text-on-surface">
-                  Tap
-                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none" aria-hidden="true">
-                    <path d="M8 1v12M8 1L4.5 4.5M8 1l3.5 3.5" stroke="#0d1c32" strokeWidth="1.6"
-                      strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M2 9v9h12V9" stroke="#0d1c32" strokeWidth="1.6"
-                      strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  in the Safari toolbar
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="num flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-container font-label text-[11px] text-secondary-fixed">
-                  2
-                </span>
-                <span className="font-body text-body-md text-on-surface">
-                  Scroll and choose <strong>Add to Home Screen</strong>
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="num flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-container font-label text-[11px] text-secondary-fixed">
-                  3
-                </span>
-                <span className="font-body text-body-md text-on-surface">
-                  Tap <strong>Add</strong>
-                </span>
-              </li>
-            </ol>
-            <button
-              onClick={dismiss}
-              className="mt-4 w-full rounded-xl border border-outline-variant/40 py-3 font-label text-label-bold uppercase tracking-widest text-on-surface"
-            >
-              Got it
-            </button>
-          </>
-        ) : (
-          <div className="mt-4 flex gap-3">
-            <button
-              onClick={install}
-              disabled={installing}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-label text-label-bold uppercase tracking-widest text-on-primary disabled:opacity-40"
-            >
-              <span className="material-symbols-outlined text-[20px]">download</span>
-              {installing ? "Installing" : "Install"}
-            </button>
-            <button
-              onClick={dismiss}
-              className="rounded-xl border border-outline-variant/40 px-5 font-label text-label-bold text-on-surface"
-            >
-              Later
-            </button>
+        <ol className="space-y-3">
+          {steps.map((s) => (
+            <li key={s.n} className="flex items-center gap-4 rounded-2xl bg-surface-container p-4">
+              <span className="num flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container font-label text-[13px] font-semibold text-secondary-fixed">
+                {s.n}
+              </span>
+              <span className="flex flex-1 items-center gap-2 font-body text-body-md text-on-surface">
+                {s.text}
+              </span>
+              {s.icon}
+            </li>
+          ))}
+        </ol>
+
+        <p className="mt-5 text-center font-body text-sm text-on-surface-variant">
+          Look for this icon
+          <span className="mx-1.5 inline-flex translate-y-1 text-primary-container">
+            <ShareIcon />
+          </span>
+          {bottomShare ? "at the bottom of your screen" : "at the top right of your screen"}
+        </p>
+
+        {/* The arrow points at the real Safari toolbar, which is below this sheet
+            on iPhone and above it on iPad. */}
+        {bottomShare ? (
+          <div className="mt-3 flex justify-center">
+            <span className="material-symbols-outlined text-[32px] text-primary-container anim-bounce">
+              arrow_downward
+            </span>
           </div>
-        )}
+        ) : null}
+
+        <button
+          onClick={dismiss}
+          className="mt-5 w-full rounded-xl border border-outline-variant/40 py-3.5 font-label text-label-bold uppercase tracking-widest text-on-surface"
+        >
+          Close
+        </button>
       </div>
     </div>
   );
