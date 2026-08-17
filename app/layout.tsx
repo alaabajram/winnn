@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import Shell from "@/components/shell";
 import { CartProvider } from "@/components/cart-provider";
+import InstallPrompt from "@/components/install-prompt";
 import RegisterSW from "@/components/register-sw";
 import { supabaseServer } from "@/lib/supabase/server";
 import { winnn } from "@/lib/format";
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    manifest: "/manifest.webmanifest",
+    manifest: "/site.webmanifest",
     appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: name },
     icons: {
       icon: s.favicon_url || "/icon-192.png",
@@ -48,7 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { data: auth } = await sb.auth.getUser();
 
   const { data: settingsRow } = await sb
-    .from("site_settings").select("site_name,logo_url").maybeSingle();
+    .from("site_settings").select("site_name,logo_url,favicon_url").maybeSingle();
   const settings: any = settingsRow || {};
 
   let balance: string | null = null;
@@ -85,6 +86,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           >
             {children}
           </Shell>
+          <InstallPrompt
+            appName={settings.site_name || "Winnn"}
+            iconUrl={settings.favicon_url || settings.logo_url || null}
+          />
         </CartProvider>
         <RegisterSW />
       </body>
