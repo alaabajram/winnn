@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { winnn, dateFmt } from "@/lib/format";
 import SignOut from "@/components/sign-out";
 import AddressBook from "@/components/address-book";
+import InstallButton from "@/components/install-button";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,10 @@ export default async function Profile() {
             <p className="mb-8 inline-block rounded-full bg-secondary-container/20 px-4 py-1.5 font-label text-label-bold uppercase tracking-[0.2em] text-secondary backdrop-blur-sm">
               Member
             </p>
+
+            <div className="mb-6 w-full">
+              <InstallButton />
+            </div>
 
             <div className="w-full space-y-4 text-left">
               <div className="group flex items-center gap-4 rounded-2xl bg-surface p-4 transition-shadow hover:shadow-md">
