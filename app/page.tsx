@@ -1,315 +1,214 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
-import { winnn, countdown, dateFmt } from "@/lib/format";
+import { price } from "@/lib/money";
+import { dateFmt } from "@/lib/format";
 import { artFor, splitCountdown } from "@/lib/art";
+import DistrictPicker from "@/components/district-picker";
+import VoucherEntry from "@/components/voucher-entry";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+export default async function Deals(props: any) {
+  const search = await props.searchParams;
+  const districtSlug = search && search.d ? String(search.d) : "";
+
   const sb = await supabaseServer();
 
-  const { data: liveRows } = await sb
+  const { data: districtRows } = await sb
+    .from("districts").select("id,slug,name,governorate").eq("is_active", true).order("sort_order");
+  const districts: any[] = (districtRows as any[]) || [];
+  const active = districts.find((d) => d.slug === districtSlug);
+
+  let q = sb
     .from("campaigns")
-    .select("id,name,slug,description,type,draw_date,sales_close_at,ticket_price_cents,hero_image_url,thumbnail_url,campaign_prizes(position,title,value_cents)")
+    .select("id,name,slug,description,type,draw_date,sales_close_at,hero_image_url,thumbnail_url,is_nationwide,district_id,districts(name),campaign_prizes(position,title,value_cents),campaign_products(tickets_per_unit,is_primary,products(id,name,slug,price_cents,stock,images,status))")
     .eq("status", "LIVE")
     .order("draw_date", { ascending: true });
 
+  if (active) q = q.or("is_nationwide.eq.true,district_id.eq." + active.id);
+
+  const { data: liveRows } = await q;
+  const live: any[] = (liveRows as any[]) || [];
+
   const { data: pastRows } = await sb
     .from("draws")
-    .select("id,youtube_video_id,published_at,pool_total_count,campaigns(name,slug),draw_winners(position,claim_status,tickets(serial),profiles(full_name))")
+    .select("id,published_at,pool_total_count,youtube_video_id,campaigns(name,slug),draw_winners(tickets(serial),profiles(full_name))")
     .eq("status", "PUBLISHED")
     .order("published_at", { ascending: false })
     .limit(3);
+  const past: any[] = (pastRows as any[]) || [];
 
   const { data: auth } = await sb.auth.getUser();
   const signedIn = !!(auth && auth.user);
 
-  const counts: any = {};
-  if (signedIn) {
-    const { data: mine } = await sb.from("tickets").select("campaign_id").eq("status", "ELIGIBLE");
-    ((mine as any[]) || []).forEach((t: any) => {
-      counts[t.campaign_id] = (counts[t.campaign_id] || 0) + 1;
-    });
-  }
-
-  const live: any[] = (liveRows as any[]) || [];
-  const past: any[] = (pastRows as any[]) || [];
-  const hero: any = live[0];
-  const heroPrize = hero && hero.campaign_prizes
-    ? hero.campaign_prizes.find((p: any) => p.position === 1)
-    : null;
-  const cd = hero ? splitCountdown(hero.sales_close_at) : null;
-  const heroTickets = hero ? counts[hero.id] || 0 : 0;
-
   return (
-    <div className="relative flex w-full flex-col pb-margin-desktop">
-      {hero ? (
-        <section className="relative mb-12 -mt-4 w-full overflow-hidden rounded-[24px] shadow-2xl">
-          {hero.hero_image_url ? (
-            <img src={hero.hero_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          ) : (
-            <div className={"absolute inset-0 " + artFor(hero.slug)} />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/10" />
-
-          <div className="relative z-10 flex min-h-[480px] flex-col justify-between px-6 py-12 sm:px-12 sm:py-20">
-            <div className="flex w-full items-start justify-between">
-              <div className="inline-flex items-center gap-2 rounded-full border border-surface/20 bg-surface/10 px-4 py-1.5 backdrop-blur-md">
-                <span className="material-symbols-outlined text-[16px] text-secondary-fixed">
-                  workspace_premium
-                </span>
-                <span className="font-label text-[11px] font-semibold uppercase tracking-widest text-on-primary">
-                  {hero.type === "HYBRID" ? "Online + In store" : hero.type === "ONLINE" ? "Online draw" : "In store draw"}
-                </span>
-              </div>
-              <div className="flex flex-col items-end text-right">
-                <span className="mb-1 rounded bg-surface px-2 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant shadow-sm">
-                  Your entries
-                </span>
-                <div className="flex items-center gap-1 rounded-lg border border-outline/20 bg-surface-container-high/90 px-3 py-1.5 backdrop-blur-md">
-                  <span className="material-symbols-outlined text-[14px] text-secondary">local_activity</span>
-                  <span className="num font-headline text-headline-sm text-on-surface">
-                    {signedIn ? heroTickets : 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-auto flex max-w-2xl flex-col">
-              <h1 className="mb-2 font-display text-display-sm leading-tight text-on-primary drop-shadow-md sm:text-display-lg">
-                {heroPrize && heroPrize.title
-                  ? heroPrize.title.split("-").slice(1).join("-").trim() || heroPrize.title
-                  : hero.name}
-              </h1>
-              <p className="mb-8 max-w-lg font-body text-body-lg leading-relaxed text-primary-fixed-dim">
-                {hero.description}
-              </p>
-
-              <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
-                <Link
-                  href={"/campaigns/" + hero.slug}
-                  className="flex items-center gap-2 rounded-full bg-secondary-container px-8 py-4 font-label text-label-bold uppercase tracking-widest text-on-secondary-container shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary-fixed hover:shadow-xl"
-                >
-                  Enter now
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                </Link>
-
-                {cd ? (
-                  <div className="flex flex-col">
-                    <span className="mb-1 font-label text-[10px] font-semibold uppercase tracking-widest text-primary-fixed">
-                      Entry closes in
-                    </span>
-                    <div className="num flex gap-3 font-headline text-headline-sm tracking-tight text-on-primary drop-shadow-md">
-                      {[
-                        { v: cd.days, l: "Days" },
-                        { v: cd.hours, l: "Hrs" },
-                        { v: cd.mins, l: "Min" },
-                      ].map((b, i) => (
-                        <div key={b.l} className="flex items-center gap-3">
-                          {i > 0 ? <span className="mt-2 opacity-50">:</span> : null}
-                          <div className="flex flex-col items-center rounded-lg border border-outline-variant/10 bg-primary-container/60 px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.2)] backdrop-blur-md">
-                            <span className="text-secondary-fixed">{b.v}</span>
-                            <span className="mt-1 font-label text-[9px] font-semibold uppercase tracking-widest text-on-primary-container">
-                              {b.l}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <Link
-        href="/how-it-works"
-        className="group mb-12 flex flex-col items-start justify-between gap-5 rounded-[24px] bg-surface-container p-6 transition-colors hover:bg-surface-container-high sm:flex-row sm:items-center sm:p-8"
-      >
-        <div className="flex items-start gap-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-tertiary-fixed text-on-tertiary-fixed">
-            <span className="material-symbols-outlined">help</span>
-          </span>
-          <div>
-            <p className="font-headline text-headline-sm text-on-surface">New to Winnn?</p>
-            <p className="mt-1 font-body text-body-md text-on-surface-variant">
-              Two ways in: buy credits online, or pick up a free voucher in a partner shop. Both enter
-              the same physical draw.
-            </p>
-          </div>
+    <div className="flex w-full flex-col">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-display-sm text-on-background sm:text-display-lg">Deals</h1>
+          <p className="mt-1 font-body text-body-md text-on-surface-variant">
+            Buy the product. The tickets come free.
+          </p>
         </div>
-        <span className="flex shrink-0 items-center gap-2 rounded-xl bg-primary-container px-5 py-3 font-label text-label-bold uppercase tracking-widest text-secondary-fixed">
-          See how
-          <span className="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">
-            arrow_forward
-          </span>
-        </span>
-      </Link>
-
-      <div className="mb-8 flex items-center gap-4">
-        <h2 className="font-headline text-headline-md tracking-tight text-on-background">Active campaigns</h2>
-        <div className="h-px flex-1 bg-gradient-to-r from-outline-variant/30 to-transparent" />
+        <Suspense fallback={<div className="h-11 w-32 animate-pulse rounded-full bg-surface-container" />}>
+          <DistrictPicker districts={districts} active={districtSlug} />
+        </Suspense>
       </div>
 
-      <div className="mb-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {live.length === 0 ? (
+        <div className="rounded-3xl bg-surface-container p-10 text-center">
+          <span className="material-symbols-outlined text-[40px] text-on-surface-variant">
+            location_off
+          </span>
+          <p className="mt-3 font-headline text-headline-sm text-on-surface">
+            Nothing in {active ? active.name : "your area"} yet
+          </p>
+          <Link href="/" className="mt-4 inline-block font-label text-label-bold text-primary hover:underline">
+            See all of Lebanon
+          </Link>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {live.map((c: any) => {
-          const prize = c.campaign_prizes ? c.campaign_prizes.find((x: any) => x.position === 1) : null;
-          const mine = counts[c.id] || 0;
+          const prizes: any[] = (c.campaign_prizes as any[]) || [];
+          const prize = prizes.slice().sort((a, b) => a.position - b.position)[0];
+          const links: any[] = ((c.campaign_products as any[]) || [])
+            .filter((x) => x.products && x.products.status === "ACTIVE");
+          const primary = links.find((x) => x.is_primary) || links[0];
+          const product = primary ? primary.products : null;
+          const tickets = primary ? primary.tickets_per_unit : 0;
+          const cd = splitCountdown(c.sales_close_at);
+          const img = c.hero_image_url || c.thumbnail_url;
+          const pimg = product && product.images && product.images.length ? product.images[0] : null;
+
           return (
-            <article
-              key={c.id}
-              className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-surface-container-high bg-surface shadow-md transition-all duration-300 hover:shadow-xl"
-            >
-              <div className="relative h-48 w-full overflow-hidden">
-                {c.thumbnail_url || c.hero_image_url ? (
-                  <img
-                    src={c.thumbnail_url || c.hero_image_url}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
+            <article key={c.id}
+              className="group flex flex-col overflow-hidden rounded-[24px] bg-surface-container-lowest shadow-md transition-shadow hover:shadow-xl">
+
+              <Link href={"/campaigns/" + c.slug} className="relative block h-52 overflow-hidden">
+                {img ? (
+                  <img src={img} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 ) : (
-                  <div className={"absolute inset-0 transition-transform duration-700 group-hover:scale-110 " + artFor(c.slug)} />
+                  <div className={"h-full w-full " + artFor(c.slug)} />
                 )}
-                <div className="absolute left-4 top-4 rounded bg-surface/90 px-3 py-1 shadow-sm backdrop-blur-md">
-                  <span className="font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface">
-                    Draw {dateFmt(c.draw_date)}
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/20 to-transparent" />
+
+                <div className="absolute left-4 top-4 flex gap-2">
+                  <span className="rounded-full bg-surface/90 px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface backdrop-blur-sm">
+                    {c.is_nationwide ? "All Lebanon" : c.districts ? c.districts.name : "Local"}
                   </span>
                 </div>
-              </div>
 
-              <div className="relative z-10 flex flex-1 flex-col p-6">
-                <div className="mb-4">
-                  <h3 className="mb-1 line-clamp-1 font-headline text-headline-sm uppercase text-on-surface">
-                    {c.name}
-                  </h3>
-                  <p className="font-body text-body-md font-medium text-secondary">
-                    {prize ? prize.title : "Prize to be announced"}
+                {cd ? (
+                  <div className="num absolute right-4 top-4 flex gap-1 rounded-lg bg-primary-container/80 px-2.5 py-1.5 backdrop-blur-md">
+                    <span className="font-headline text-[13px] text-secondary-fixed">{cd.days}d</span>
+                    <span className="font-headline text-[13px] text-secondary-fixed">{cd.hours}h</span>
+                  </div>
+                ) : null}
+
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="font-display text-[26px] leading-tight text-on-primary drop-shadow">
+                    {prize ? prize.title.split("-").slice(1).join("-").trim() || prize.title : c.name}
                   </p>
                 </div>
+              </Link>
 
-                <div className="mb-4 flex items-center justify-between border-b border-t border-surface-variant/50 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-outline">sell</span>
-                    <span className="num font-label text-[12px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                      {winnn(c.ticket_price_cents)} Winnn = 1 ticket
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[16px] text-primary">local_activity</span>
-                    <span className="num font-label text-[14px] font-semibold text-on-surface">{mine}</span>
-                  </div>
-                </div>
+              <div className="flex flex-1 flex-col p-5">
+                {product ? (
+                  <>
+                    <div className="mb-4 flex items-center gap-3 rounded-2xl bg-surface-container p-3">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-variant">
+                        {pimg ? (
+                          <img src={pimg} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className={"h-full w-full " + artFor(product.slug)} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-label text-label-bold text-on-surface">{product.name}</p>
+                        <p className="num font-headline text-headline-sm text-on-surface">
+                          {price(product.price_cents)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 rounded-xl bg-secondary-container px-3 py-2 text-center">
+                        <p className="num font-headline text-headline-sm text-on-secondary-container">
+                          {tickets}
+                        </p>
+                        <p className="font-label text-[8px] font-semibold uppercase tracking-widest text-on-secondary-container">
+                          tickets
+                        </p>
+                      </div>
+                    </div>
 
-                <Link
-                  href={"/campaigns/" + c.slug}
-                  className="group/btn mt-auto flex w-full items-center justify-center gap-2 rounded-xl border border-outline-variant/40 px-4 py-3 font-label text-label-bold uppercase tracking-widest text-on-surface transition-colors hover:border-outline hover:bg-surface-container-low"
-                >
-                  View campaign
-                  <span className="material-symbols-outlined text-[16px] transition-transform group-hover/btn:translate-x-1">
-                    trending_flat
-                  </span>
-                </Link>
+                    <Link
+                      href={"/campaigns/" + c.slug}
+                      className="mt-auto block rounded-xl bg-primary py-3.5 text-center font-label text-label-bold uppercase tracking-widest text-on-primary transition-colors hover:bg-inverse-surface"
+                    >
+                      Buy and enter
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-4 font-body text-body-md text-on-surface-variant">
+                      In-store entry only. Get a voucher at a partner shop.
+                    </p>
+                    <Link
+                      href={"/campaigns/" + c.slug}
+                      className="mt-auto block rounded-xl border border-outline-variant/40 py-3.5 text-center font-label text-label-bold uppercase tracking-widest text-on-surface"
+                    >
+                      Where to find it
+                    </Link>
+                  </>
+                )}
+
+                <p className="num mt-3 text-center font-body text-sm text-on-surface-variant">
+                  Draw {dateFmt(c.draw_date)}
+                </p>
               </div>
             </article>
           );
         })}
-        {live.length === 0 ? (
-          <p className="font-body text-body-md text-on-surface-variant">No live campaigns right now.</p>
-        ) : null}
+      </div>
+
+      <div className="mt-10">
+        <VoucherEntry signedIn={signedIn} />
       </div>
 
       {past.length > 0 ? (
-        <div className="relative overflow-hidden rounded-[24px] bg-surface-container p-8 shadow-inner sm:p-12">
-          <div className="relative z-10 mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h2 className="mb-1 font-headline text-headline-md tracking-tight text-on-surface">
-                Previous results
-              </h2>
-              <p className="font-body text-body-md text-on-surface-variant">Transparency in every draw.</p>
-            </div>
-          </div>
-
-          <div className="relative z-10 flex flex-col gap-4">
+        <section className="mt-14">
+          <h2 className="mb-5 font-headline text-headline-md text-on-background">Recent winners</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {past.map((d: any) => {
-              const winner = d.draw_winners && d.draw_winners.length ? d.draw_winners[0] : null;
-              const name = winner && winner.profiles ? winner.profiles.full_name : null;
-              const masked = name
-                ? name.split(" ").map((p: string) => p[0] + "****").join(" ")
-                : "Unclaimed";
+              const w = d.draw_winners && d.draw_winners.length ? d.draw_winners[0] : null;
+              const n = w && w.profiles ? w.profiles.full_name : null;
+              const masked = n ? n.split(" ").map((x: string) => x[0] + "****").join(" ") : "Unclaimed";
               return (
-                <Link
-                  key={d.id}
-                  href={"/results/" + (d.campaigns ? d.campaigns.slug : "")}
-                  className="flex flex-col items-center gap-8 rounded-2xl border border-outline-variant/20 bg-surface p-6 shadow-sm transition-shadow hover:shadow-md md:flex-row"
-                >
-                  <div className="relative h-32 w-full flex-shrink-0 overflow-hidden rounded-xl md:w-48">
-                    <div className={"absolute inset-0 " + artFor(d.id)} />
-                    <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/60 to-transparent p-3">
-                      <span className="font-label text-[10px] font-semibold uppercase tracking-widest text-on-primary">
-                        {d.youtube_video_id ? "Watch the draw" : "Draw concluded"}
-                      </span>
+                <Link key={d.id} href={"/results/" + (d.campaigns ? d.campaigns.slug : "")}
+                  className="rounded-2xl bg-surface-container-lowest p-5 shadow-sm transition-shadow hover:shadow-md">
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
+                      <span className="material-symbols-outlined text-[20px]">emoji_events</span>
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-label text-label-bold text-on-surface">{masked}</p>
+                      <p className="num font-body text-sm text-on-surface-variant">
+                        {w && w.tickets ? w.tickets.serial : ""}
+                      </p>
                     </div>
                   </div>
-
-                  <div className="flex w-full flex-1 flex-col">
-                    <div className="mb-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-                      <h3 className="font-headline text-headline-sm uppercase text-on-surface">
-                        {d.campaigns ? d.campaigns.name : "Campaign"}
-                      </h3>
-                      <span className="rounded-full border border-outline-variant/30 bg-surface-container px-3 py-1 font-label text-[12px] font-semibold text-on-surface-variant">
-                        {dateFmt(d.published_at)}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-6 rounded-xl border border-surface-variant/50 bg-surface-container-low p-4 sm:flex-row">
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container text-on-primary shadow-inner">
-                          <span className="material-symbols-outlined text-[24px]">emoji_events</span>
-                        </div>
-                        <div>
-                          <p className="mb-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                            Winner
-                          </p>
-                          <p className="font-headline text-[16px] text-on-surface">{masked}</p>
-                        </div>
-                      </div>
-
-                      <div className="hidden h-10 w-px self-center bg-outline-variant/30 sm:block" />
-
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex items-center justify-center rounded-lg border-2 border-dashed border-secondary/40 bg-surface px-4 py-2">
-                          <div className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-surface-container-low" />
-                          <div className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-surface-container-low" />
-                          <div>
-                            <p className="mb-0.5 text-center font-label text-[10px] font-semibold uppercase tracking-widest text-secondary">
-                              Winning ticket
-                            </p>
-                            <p className="num font-headline text-[14px] tracking-widest text-on-surface">
-                              {winner && winner.tickets ? winner.tickets.serial : "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="hidden h-10 w-px self-center bg-outline-variant/30 sm:block" />
-
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <p className="mb-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                            Tickets in drum
-                          </p>
-                          <p className="num font-headline text-[16px] text-on-surface">{d.pool_total_count}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="truncate font-body text-body-md text-on-surface-variant">
+                    {d.campaigns ? d.campaigns.name : ""}
+                  </p>
+                  <p className="num mt-1 font-body text-sm text-on-surface-variant">
+                    {d.pool_total_count} in the drum
+                  </p>
                 </Link>
               );
             })}
           </div>
-        </div>
+        </section>
       ) : null}
     </div>
   );
