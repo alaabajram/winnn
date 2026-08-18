@@ -4,9 +4,9 @@ import { usePathname } from "next/navigation";
 import CartButton from "./cart-button";
 
 const NAV = [
-  { href: "/", label: "Home", icon: "home" },
-  { href: "/store", label: "Store", icon: "shopping_bag" },
-  { href: "/wallet", label: "Wallet", icon: "account_balance_wallet" },
+  { href: "/", label: "Deals", icon: "local_offer" },
+  { href: "/wallet", label: "Tickets", icon: "confirmation_number" },
+  { href: "/how-it-works", label: "How", icon: "help" },
   { href: "/profile", label: "Profile", icon: "person" },
 ];
 
@@ -17,7 +17,6 @@ function isActive(path: string | null, href: string) {
 
 export default function Shell(props: {
   children: React.ReactNode;
-  balance: string | null;
   name: string | null;
   logoUrl?: string | null;
   siteName?: string | null;
