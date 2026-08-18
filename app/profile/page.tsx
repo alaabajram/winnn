@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import { winnn, dateFmt } from "@/lib/format";
+import { dateFmt } from "@/lib/format";
+import { price } from "@/lib/money";
 import SignOut from "@/components/sign-out";
 import AddressBook from "@/components/address-book";
 import InstallButton from "@/components/install-button";
@@ -28,7 +29,7 @@ export default async function Profile() {
 
   const { data: orderRows } = await sb
     .from("orders")
-    .select("id,order_no,total_cents,status,created_at,order_items(name_snapshot,quantity)")
+    .select("id,order_no,total_cents,status,payment_state,tickets_issued,created_at,order_items(name_snapshot,quantity)")
     .order("created_at", { ascending: false })
     .limit(5);
   const orders: any[] = (orderRows as any[]) || [];
@@ -210,9 +211,21 @@ export default async function Profile() {
                           <span className="num rounded-md bg-surface-container px-2 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
                             {o.order_no}
                           </span>
-                          <span className="rounded-md bg-tertiary-fixed/30 px-2 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-tertiary-container">
-                            {o.status}
+                          <span className={
+                            "rounded-md px-2 py-1 font-label text-[10px] font-semibold uppercase tracking-widest " +
+                            (o.payment_state === "PAID"
+                              ? "bg-tertiary-fixed/30 text-on-tertiary-container"
+                              : o.payment_state === "CANCELLED"
+                              ? "bg-error-container text-on-error-container"
+                              : "bg-secondary-container text-on-secondary-container")
+                          }>
+                            {o.payment_state === "AWAITING_PAYMENT" ? "Awaiting payment" : o.payment_state}
                           </span>
+                          {o.tickets_issued ? (
+                            <span className="num rounded-md bg-primary-container px-2 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-secondary-fixed">
+                              {o.tickets_issued} tickets
+                            </span>
+                          ) : null}
                         </div>
                         <h4 className="truncate font-headline text-headline-sm text-on-surface">
                           {first ? first.name_snapshot : "Order"}
@@ -223,7 +236,7 @@ export default async function Profile() {
                         </p>
                       </div>
                       <p className="num font-headline text-headline-sm text-on-surface">
-                        {winnn(o.total_cents)} W
+                        {price(o.total_cents)}
                       </p>
                     </div>
                   );
