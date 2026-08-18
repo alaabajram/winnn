@@ -34,9 +34,15 @@ function isIos() {
   return iDevice || iPadDesktop;
 }
 
+/** Another browser's engine, or an in-app webview. Cannot install. */
+function iosOtherBrowser() {
+  const ua = navigator.userAgent || "";
+  return isIos() && /CriOS|FxiOS|EdgiOS|OPiOS|FBAN|FBAV|Instagram|Line|Twitter/.test(ua);
+}
+
 function iosSafari() {
   const ua = navigator.userAgent || "";
-  return isIos() && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return isIos() && /Safari/.test(ua) && !iosOtherBrowser();
 }
 
 /** iPhone puts the share button in the bottom toolbar; iPad puts it top right. */
@@ -72,13 +78,20 @@ export default function InstallPrompt(props: { appName?: string; iconUrl?: strin
   const [mode, setMode] = useState<"hidden" | "pill" | "sheet">("hidden");
   const [ios, setIos] = useState(false);
   const [bottomShare, setBottomShare] = useState(true);
+  const [wrongBrowser, setWrongBrowser] = useState(false);
   const [deferred, setDeferred] = useState<any>(null);
   const [installing, setInstalling] = useState(false);
 
   const name = props.appName || "Winnn";
 
   useEffect(() => {
-    if (isStandalone() || recentlyDismissed()) return;
+    // ?install=1 forces the prompt open regardless of dismissal or timing.
+    // Handy for testing on a device with no console.
+    const forced =
+      typeof window !== "undefined" &&
+      window.location.search.indexOf("install=1") > -1;
+
+    if (!forced && (isStandalone() || recentlyDismissed())) return;
 
     function onBip(e: Event) {
       e.preventDefault();
@@ -91,10 +104,13 @@ export default function InstallPrompt(props: { appName?: string; iconUrl?: strin
     window.addEventListener("appinstalled", onInstalled);
 
     let t = 0;
-    if (iosSafari()) {
+    if (isIos()) {
       setIos(true);
+      setWrongBrowser(iosOtherBrowser());
       setBottomShare(shareIsAtBottom());
-      t = window.setTimeout(() => setMode("pill"), 3000);
+      t = window.setTimeout(() => setMode(forced ? "sheet" : "pill"), forced ? 0 : 1500);
+    } else if (forced) {
+      t = window.setTimeout(() => setMode("pill"), 0);
     }
 
     return () => {
@@ -134,7 +150,7 @@ export default function InstallPrompt(props: { appName?: string; iconUrl?: strin
   // ---------------------------------------------------------------- the pill
   if (mode === "pill") {
     return (
-      <div className="anim-slide-up fixed inset-x-0 bottom-0 z-[60] flex justify-center p-3 pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="anim-slide-up fixed inset-x-0 bottom-0 z-[60] flex justify-center p-3 pb-[calc(4.75rem_+_env(safe-area-inset-bottom))] lg:pb-[calc(0.75rem_+_env(safe-area-inset-bottom))]">
         <div className="relative flex items-center gap-3 rounded-full bg-primary-container py-2 pl-2 pr-3 shadow-2xl">
           <span className="absolute inset-0 -z-10 rounded-full bg-secondary-container anim-ring" />
 
@@ -184,7 +200,7 @@ export default function InstallPrompt(props: { appName?: string; iconUrl?: strin
     <div className="fixed inset-0 z-[70] flex flex-col bg-primary/70 backdrop-blur-sm">
       <button className="flex-1" onClick={dismiss} aria-label="Close" />
 
-      <div className="anim-slide-up relative rounded-t-[32px] bg-surface px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6">
+      <div className="anim-slide-up relative rounded-t-[32px] bg-surface px-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom))] pt-6">
         <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-outline-variant" />
 
         <button
@@ -204,6 +220,17 @@ export default function InstallPrompt(props: { appName?: string; iconUrl?: strin
             </p>
           </div>
         </div>
+
+        {wrongBrowser ? (
+          <div className="mb-5 flex items-start gap-3 rounded-2xl bg-secondary-container/40 p-4">
+            <span className="material-symbols-outlined text-on-secondary-container">info</span>
+            <p className="font-body text-body-md text-on-surface">
+              This browser cannot add apps to the home screen on iPhone. Open{" "}
+              <strong>{typeof window !== "undefined" ? window.location.host : "this site"}</strong>{" "}
+              in <strong>Safari</strong> first, then follow the steps below.
+            </p>
+          </div>
+        ) : null}
 
         <ol className="space-y-3">
           {steps.map((s) => (
