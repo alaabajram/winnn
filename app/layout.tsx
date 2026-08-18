@@ -5,7 +5,6 @@ import { CartProvider } from "@/components/cart-provider";
 import InstallPrompt from "@/components/install-prompt";
 import RegisterSW from "@/components/register-sw";
 import { supabaseServer } from "@/lib/supabase/server";
-import { winnn } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
   const sb = await supabaseServer();
@@ -52,11 +51,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     .from("site_settings").select("site_name,logo_url,favicon_url").maybeSingle();
   const settings: any = settingsRow || {};
 
-  let balance: string | null = null;
   let name: string | null = null;
   if (auth && auth.user) {
-    const { data: w } = await sb.from("wallets").select("balance_cents").maybeSingle();
-    balance = winnn(w ? (w as any).balance_cents : 0);
     const { data: p } = await sb.from("profiles").select("full_name,email").maybeSingle();
     const prof: any = p;
     name = (prof && (prof.full_name || prof.email)) || auth.user.email || "Member";
@@ -79,7 +75,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <CartProvider>
           <Shell
-            balance={balance}
             name={name}
             logoUrl={settings.logo_url || null}
             siteName={settings.site_name || "Winnn"}
