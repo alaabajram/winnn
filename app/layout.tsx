@@ -52,10 +52,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const settings: any = settingsRow || {};
 
   let name: string | null = null;
+  let avatar: string | null = null;
   if (auth && auth.user) {
-    const { data: p } = await sb.from("profiles").select("full_name,email").maybeSingle();
+    const { data: p } = await sb.from("profiles").select("full_name,email,avatar_url").maybeSingle();
     const prof: any = p;
     name = (prof && (prof.full_name || prof.email)) || auth.user.email || "Member";
+    avatar = (prof && prof.avatar_url) || null;
   }
 
   return (
@@ -76,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CartProvider>
           <Shell
             name={name}
+            avatarUrl={avatar}
             logoUrl={settings.logo_url || null}
             siteName={settings.site_name || "Winnn"}
           >
