@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
-import { price } from "@/lib/money";
 import { dateFmt } from "@/lib/format";
-import { artFor, splitCountdown } from "@/lib/art";
+import { splitCountdown } from "@/lib/art";
 import DistrictPicker from "@/components/district-picker";
 import VoucherEntry from "@/components/voucher-entry";
+import DealCard from "@/components/deal-card";
 
 export const dynamic = "force-dynamic";
 
@@ -78,96 +78,33 @@ export default async function Deals(props: any) {
             .filter((x) => x.products && x.products.status === "ACTIVE");
           const primary = links.find((x) => x.is_primary) || links[0];
           const product = primary ? primary.products : null;
-          const tickets = primary ? primary.tickets_per_unit : 0;
-          const cd = splitCountdown(c.sales_close_at);
-          const img = c.hero_image_url || c.thumbnail_url;
           const pimg = product && product.images && product.images.length ? product.images[0] : null;
 
           return (
-            <article key={c.id}
-              className="group flex flex-col overflow-hidden rounded-[24px] bg-surface-container-lowest shadow-md transition-shadow hover:shadow-xl">
-
-              <Link href={"/campaigns/" + c.slug} className="relative block h-52 overflow-hidden">
-                {img ? (
-                  <img src={img} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                ) : (
-                  <div className={"h-full w-full " + artFor(c.slug)} />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/20 to-transparent" />
-
-                <div className="absolute left-4 top-4 flex gap-2">
-                  <span className="rounded-full bg-surface/90 px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface backdrop-blur-sm">
-                    {c.is_nationwide ? "All Lebanon" : c.districts ? c.districts.name : "Local"}
-                  </span>
-                </div>
-
-                {cd ? (
-                  <div className="num absolute right-4 top-4 flex gap-1 rounded-lg bg-primary-container/80 px-2.5 py-1.5 backdrop-blur-md">
-                    <span className="font-headline text-[13px] text-secondary-fixed">{cd.days}d</span>
-                    <span className="font-headline text-[13px] text-secondary-fixed">{cd.hours}h</span>
-                  </div>
-                ) : null}
-
-                <div className="absolute inset-x-0 bottom-0 p-4">
-                  <p className="font-display text-[26px] leading-tight text-on-primary drop-shadow">
-                    {prize ? prize.title.split("-").slice(1).join("-").trim() || prize.title : c.name}
-                  </p>
-                </div>
-              </Link>
-
-              <div className="flex flex-1 flex-col p-5">
-                {product ? (
-                  <>
-                    <div className="mb-4 flex items-center gap-3 rounded-2xl bg-surface-container p-3">
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-variant">
-                        {pimg ? (
-                          <img src={pimg} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <div className={"h-full w-full " + artFor(product.slug)} />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-label text-label-bold text-on-surface">{product.name}</p>
-                        <p className="num font-headline text-headline-sm text-on-surface">
-                          {price(product.price_cents)}
-                        </p>
-                      </div>
-                      <div className="shrink-0 rounded-xl bg-secondary-container px-3 py-2 text-center">
-                        <p className="num font-headline text-headline-sm text-on-secondary-container">
-                          {tickets}
-                        </p>
-                        <p className="font-label text-[8px] font-semibold uppercase tracking-widest text-on-secondary-container">
-                          tickets
-                        </p>
-                      </div>
-                    </div>
-
-                    <Link
-                      href={"/campaigns/" + c.slug}
-                      className="mt-auto block rounded-xl bg-primary py-3.5 text-center font-label text-label-bold uppercase tracking-widest text-on-primary transition-colors hover:bg-inverse-surface"
-                    >
-                      Buy and enter
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <p className="mb-4 font-body text-body-md text-on-surface-variant">
-                      In-store entry only. Get a voucher at a partner shop.
-                    </p>
-                    <Link
-                      href={"/campaigns/" + c.slug}
-                      className="mt-auto block rounded-xl border border-outline-variant/40 py-3.5 text-center font-label text-label-bold uppercase tracking-widest text-on-surface"
-                    >
-                      Where to find it
-                    </Link>
-                  </>
-                )}
-
-                <p className="num mt-3 text-center font-body text-sm text-on-surface-variant">
-                  Draw {dateFmt(c.draw_date)}
-                </p>
-              </div>
-            </article>
+            <DealCard
+              key={c.id}
+              ticketsPerUnit={primary ? primary.tickets_per_unit : 0}
+              campaign={{
+                id: c.id, slug: c.slug, name: c.name,
+                image: c.hero_image_url || c.thumbnail_url || null,
+                prizeTitle: prize
+                  ? prize.title.split("-").slice(1).join("-").trim() || prize.title
+                  : null,
+                drawDate: dateFmt(c.draw_date),
+                areaLabel: c.is_nationwide
+                  ? "All Lebanon"
+                  : c.districts ? c.districts.name : "Local",
+                countdown: splitCountdown(c.sales_close_at),
+              }}
+              product={
+                product
+                  ? {
+                      id: product.id, slug: product.slug, name: product.name,
+                      price_cents: product.price_cents, stock: product.stock, image: pimg,
+                    }
+                  : null
+              }
+            />
           );
         })}
       </div>
