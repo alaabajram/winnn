@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { FIELD, Field, Card, Btn, Pill, statusTone, Banner, cleanError } from "./ui";
-import { winnn, dateFmt } from "@/lib/format";
+import { dateFmt } from "@/lib/format";
+import { price } from "@/lib/money";
 import { toCents } from "@/lib/money";
 import ImageUpload from "./image-upload";
 
@@ -102,13 +103,13 @@ export default function StoreClient(props: { products: any[]; cats: any[]; order
         <Card title="Price and stock">
           <div className="mb-5 rounded-xl bg-primary-container p-4">
             <p className="font-body text-body-md text-on-primary-container">
-              Customers pay in <span className="font-semibold text-secondary-fixed">Winnn</span>, taken
-              from their wallet at checkout. 1 Winnn = 1 USD. Enter the price in Winnn.
+              Real money in <span className="font-semibold text-secondary-fixed">USD</span>. Tether
+              this product to a campaign from the campaign editor to make buying it award tickets.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <Field label="Price (Winnn)">
-              <input className={FIELD + " num"} inputMode="decimal" placeholder="45.00"
+            <Field label="Price (USD)">
+              <input className={FIELD + " num"} inputMode="decimal" placeholder="24.00"
                 value={form.price} onChange={(e) => set("price", e.target.value)} />
             </Field>
             <Field label="Stock">
@@ -245,7 +246,7 @@ export default function StoreClient(props: { products: any[]; cats: any[]; order
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <p className="font-headline text-headline-sm text-on-surface">{p.name}</p>
-                  <p className="num font-body text-body-md text-secondary">{winnn(p.price_cents)} Winnn</p>
+                  <p className="num font-body text-body-md text-secondary">{price(p.price_cents)}</p>
                 </div>
                 <Pill tone={statusTone(p.status)}>{p.status}</Pill>
               </div>
@@ -324,7 +325,7 @@ export default function StoreClient(props: { products: any[]; cats: any[]; order
                         {items.length ? items[0].name_snapshot : "-"}
                         {items.length > 1 ? " +" + (items.length - 1) : ""}
                       </td>
-                      <td className="num py-4 font-label text-label-bold text-on-surface">{winnn(o.total_cents)} W</td>
+                      <td className="num py-4 font-label text-label-bold text-on-surface">{price(o.total_cents)}</td>
                       <td className="py-4"><Pill tone={statusTone(o.status)}>{o.status}</Pill></td>
                       <td className="num py-4 font-body text-sm text-on-surface-variant">{dateFmt(o.created_at)}</td>
                     </tr>
