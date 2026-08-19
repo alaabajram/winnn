@@ -1,6 +1,6 @@
 # Winnn
 
-Lucky-draw and rewards PWA for the Lebanese market, plus a full admin console.
+E-commerce and Merchant rewards PWA for the Lebanese market, plus a full admin console.
 Next.js 15 + Supabase.
 
 **Supabase project:** `hryebohnzyyokidxsczl` (eu-central-1)
