@@ -17,6 +17,7 @@ function dtLocal(v: string | null) {
 
 export default function CampaignEditor(props: {
   campaign: any; prizes: any[]; selected: string[]; merchants: any[];
+  districts: any[]; products: any[]; tethered: any[];
 }) {
   const c = props.campaign;
   const router = useRouter();
@@ -64,6 +65,17 @@ export default function CampaignEditor(props: {
     c && c.faq && (c.faq as any[]).length ? (c.faq as any[]) : [{ q: "", a: "" }]
   );
   const [selected, setSelected] = useState<string[]>(props.selected);
+  const [nationwide, setNationwide] = useState<boolean>(c ? c.is_nationwide !== false : true);
+  const [districtId, setDistrictId] = useState<string>(c && c.district_id ? c.district_id : "");
+  const [tether, setTether] = useState<any[]>(
+    props.tethered && props.tethered.length
+      ? props.tethered.map((t) => ({
+          product_id: t.product_id,
+          tickets_per_unit: String(t.tickets_per_unit),
+          is_primary: !!t.is_primary,
+        }))
+      : []
+  );
 
   function set(k: string, v: any) { setF({ ...f, [k]: v }); }
 
@@ -114,6 +126,15 @@ export default function CampaignEditor(props: {
     });
     await sb.rpc("fn_admin_set_campaign_merchants", {
       p_campaign_id: newId, p_merchant_ids: selected,
+    });
+    await sb.rpc("fn_admin_set_campaign_area", {
+      p_campaign_id: newId,
+      p_district_id: districtId || null,
+      p_nationwide: nationwide,
+    });
+    await sb.rpc("fn_admin_set_campaign_products", {
+      p_campaign_id: newId,
+      p_rows: tether.filter((t) => t.product_id),
     });
 
     if (alsoStatus) {
@@ -300,6 +321,96 @@ export default function CampaignEditor(props: {
             <input className={FIELD + " num"} value={f.max_offline_per_customer} onChange={(e) => set("max_offline_per_customer", e.target.value)} />
           </Field>
         </div>
+      </Section>
+
+      <Section title="Products that enter this draw">
+        <div className="mb-5 rounded-xl bg-primary-container p-4">
+          <p className="font-body text-body-md text-on-primary-container">
+            Customers buy a product, and the tickets come with it. A campaign with no product here
+            can only be entered with a physical voucher.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {tether.map((t, i) => (
+            <div key={i} className="grid grid-cols-12 items-end gap-3">
+              <div className="col-span-12 sm:col-span-7">
+                <label className="mb-2 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">
+                  Product
+                </label>
+                <select className={FIELD} value={t.product_id}
+                  onChange={(e) => {
+                    const n = tether.slice(); n[i] = { ...n[i], product_id: e.target.value }; setTether(n);
+                  }}>
+                  <option value="">Choose a product</option>
+                  {props.products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({(Number(p.price_cents) / 100).toFixed(2)} USD)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label className="mb-2 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">
+                  Tickets per unit
+                </label>
+                <input className={FIELD + " num"} inputMode="numeric" value={t.tickets_per_unit}
+                  onChange={(e) => {
+                    const n = tether.slice(); n[i] = { ...n[i], tickets_per_unit: e.target.value }; setTether(n);
+                  }} />
+              </div>
+              <div className="col-span-4 sm:col-span-1 flex items-center pb-3">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="h-5 w-5" checked={!!t.is_primary}
+                    onChange={(e) => {
+                      const n = tether.map((x, y) => ({ ...x, is_primary: y === i ? e.target.checked : false }));
+                      setTether(n);
+                    }} />
+                  <span className="font-label text-[11px] uppercase text-on-surface-variant">Main</span>
+                </label>
+              </div>
+              <div className="col-span-2 sm:col-span-1 flex justify-end pb-2">
+                <button onClick={() => setTether(tether.filter((_, y) => y !== i))} className="text-error">
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5">
+          <Btn tone="ghost"
+            onClick={() => setTether([...tether, { product_id: "", tickets_per_unit: "1", is_primary: tether.length === 0 }])}>
+            Add product
+          </Btn>
+        </div>
+        <p className="mt-3 font-body text-sm text-on-surface-variant">
+          The product marked Main is the one shown on the deal card.
+        </p>
+      </Section>
+
+      <Section title="Where it runs">
+        <label className="mb-4 flex items-start gap-3 rounded-xl bg-surface-container p-4">
+          <input type="checkbox" className="mt-1 h-5 w-5" checked={nationwide}
+            onChange={(e) => setNationwide(e.target.checked)} />
+          <span>
+            <span className="block font-label text-label-bold text-on-surface">All Lebanon</span>
+            <span className="block font-body text-sm text-on-surface-variant">
+              Shows to everyone regardless of the district they choose.
+            </span>
+          </span>
+        </label>
+
+        {!nationwide ? (
+          <Field label="District" hint="Only shown to customers in this district.">
+            <select className={FIELD} value={districtId} onChange={(e) => setDistrictId(e.target.value)}>
+              <option value="">Choose a district</option>
+              {props.districts.map((d) => (
+                <option key={d.id} value={d.id}>{d.governorate} / {d.name}</option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
       </Section>
 
       <Section title="Participating businesses" open={false}>
