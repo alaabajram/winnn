@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
-import { winnn, dateFmt } from "@/lib/format";
+import { dateFmt } from "@/lib/format";
+import { price } from "@/lib/money";
 import { Pill } from "@/components/admin/ui";
 import { statusTone } from "@/lib/status";
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
@@ -21,12 +23,13 @@ export default async function AdminDashboard() {
     sb.from("merchant_invoices").select("id", { count: "exact", head: true }).in("status", ["DRAFT", "SENT", "OVERDUE"]),
   ]);
 
-  const { data: soldRows } = await sb
-    .from("wallet_transactions").select("amount_cents").eq("type", "TOP_UP");
-  const sold = ((soldRows as any[]) || []).reduce((a, r) => a + Number(r.amount_cents || 0), 0);
+  const { data: paidRows } = await sb
+    .from("orders").select("total_cents").eq("payment_state", "PAID");
+  const revenue = ((paidRows as any[]) || []).reduce((a, r) => a + Number(r.total_cents || 0), 0);
 
-  const { data: heldRows } = await sb.from("wallets").select("balance_cents");
-  const held = ((heldRows as any[]) || []).reduce((a, r) => a + Number(r.balance_cents || 0), 0);
+  const { data: dueRows } = await sb
+    .from("orders").select("total_cents").eq("payment_state", "AWAITING_PAYMENT");
+  const due = ((dueRows as any[]) || []).reduce((a, r) => a + Number(r.total_cents || 0), 0);
 
   const { data: upcoming } = await sb
     .from("campaigns")
@@ -42,8 +45,8 @@ export default async function AdminDashboard() {
   const kpis = [
     { label: "Live campaigns", value: campaignsLive.count || 0, icon: "campaign" },
     { label: "Customers", value: customers.count || 0, icon: "group" },
-    { label: "Winnn sold", value: winnn(sold), icon: "payments" },
-    { label: "Wallet liability", value: winnn(held), icon: "account_balance", warn: true },
+    { label: "Revenue", value: price(revenue), icon: "payments" },
+    { label: "Awaiting payment", value: price(due), icon: "hourglass_top" },
     { label: "Tickets total", value: ticketsAll.count || 0, icon: "local_activity" },
     { label: "Orders", value: ordersCount.count || 0, icon: "shopping_bag" },
   ];
