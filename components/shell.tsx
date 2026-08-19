@@ -18,42 +18,42 @@ function isActive(path: string | null, href: string) {
 export default function Shell(props: {
   children: React.ReactNode;
   name: string | null;
+  avatarUrl?: string | null;
   logoUrl?: string | null;
   siteName?: string | null;
 }) {
-  const brand = props.siteName || "Winnn";
   const path = usePathname();
+  const brand = props.siteName || "Winnn";
 
-  // Routes that render their own chrome. The admin console has its own fixed
-  // sidebar and header; without this bail-out both sidebars mount at once and
-  // the customer nav sits on top of the admin tabs.
+  // Routes that render their own chrome. Without this the admin sidebar and
+  // the customer sidebar both mount and one covers the other.
   const BARE = ["/login", "/auth", "/admin"];
   const bare = !!path && BARE.some((p) => path === p || path.indexOf(p + "/") === 0);
   if (bare) return <>{props.children}</>;
 
+  const Logo = (cls: string) =>
+    props.logoUrl ? (
+      <img src={props.logoUrl} alt={brand} className={cls} />
+    ) : (
+      <span className="flex items-center gap-2">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-container">
+          <span className="font-display text-headline-sm text-on-secondary-container">
+            {brand.slice(0, 1).toUpperCase()}
+          </span>
+        </span>
+        <span className="font-headline text-headline-md uppercase tracking-widest text-primary-fixed">
+          {brand}
+        </span>
+      </span>
+    );
+
   return (
     <>
       <aside className="fixed left-0 top-0 z-50 hidden h-full w-64 flex-col bg-primary-container py-8 shadow-2xl lg:flex">
-        <div className="mb-12 flex items-center gap-3 px-8">
-          {props.logoUrl ? (
-            <img
-              src={props.logoUrl}
-              alt={brand}
-              className="h-10 w-auto max-w-[150px] object-contain"
-            />
-          ) : (
-            <>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-container">
-                <span className="font-display text-headline-sm text-on-secondary-container">
-                  {brand.slice(0, 1).toUpperCase()}
-                </span>
-              </div>
-              <span className="font-headline text-headline-md uppercase tracking-widest text-primary-fixed">
-                {brand}
-              </span>
-            </>
-          )}
-        </div>
+        <Link href="/" className="mb-12 flex items-center px-6">
+          {Logo("h-14 w-auto max-w-[190px] object-contain")}
+        </Link>
+
         <nav className="flex-1 space-y-2 px-4">
           {NAV.map((it) => (
             <Link
@@ -72,7 +72,8 @@ export default function Shell(props: {
             </Link>
           ))}
         </nav>
-        <div className="px-8 pt-6">
+
+        <div className="px-6 pt-6">
           <p className="text-[10px] uppercase tracking-widest text-on-primary-container/60">
             Draws are physical and recorded
           </p>
@@ -80,61 +81,69 @@ export default function Shell(props: {
       </aside>
 
       <div className="lg:pl-64">
-        <header className="fixed left-0 right-0 top-0 z-40 flex h-20 items-center justify-between bg-surface/80 px-margin-mobile shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:left-64 lg:px-margin-desktop">
-          <Link href="/" className="flex items-center gap-2 lg:hidden">
+        <header className="fixed left-0 right-0 top-0 z-40 flex h-20 items-center justify-between gap-3 bg-surface/85 px-margin-mobile shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:left-64 lg:px-margin-desktop">
+          <Link href="/" className="flex items-center lg:hidden">
             {props.logoUrl ? (
               <img
                 src={props.logoUrl}
                 alt={brand}
-                className="h-9 w-auto max-w-[130px] object-contain"
+                className="h-12 w-auto max-w-[170px] object-contain"
               />
             ) : (
-              <>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-container">
-                  <span className="font-display text-label-bold text-secondary-fixed">
+              <span className="flex items-center gap-2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-container">
+                  <span className="font-display text-headline-sm text-secondary-fixed">
                     {brand.slice(0, 1).toUpperCase()}
                   </span>
-                </div>
+                </span>
                 <span className="font-headline text-headline-sm uppercase tracking-widest text-on-surface">
                   {brand}
                 </span>
-              </>
+              </span>
             )}
           </Link>
 
-          <div className="flex flex-1 items-center justify-end gap-4 lg:flex-none">
-            <CartButton />
-            <Link
-              href="/wallet"
-              className="flex items-center gap-3 rounded-full border border-outline-variant/20 bg-primary-container py-1 pl-4 pr-1 shadow-lg"
-            >
-              <span className="num font-label text-label-bold uppercase tracking-tighter text-secondary-fixed-dim">
-                {props.balance === null ? "Sign in" : props.balance + " Winnn"}
-              </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container transition-transform active:scale-90">
-                <span className="material-symbols-outlined text-[18px]">add</span>
-              </span>
-            </Link>
+          <div className="hidden lg:block" />
 
-            <Link href="/profile" className="flex items-center gap-3 border-l border-outline-variant pl-4">
-              <div className="hidden text-right sm:block">
-                <p className="font-label text-label-bold text-on-surface">
-                  {props.name === null ? "Guest" : props.name}
-                </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
-                  {props.name === null ? "Not signed in" : "Member"}
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary-container bg-primary-container text-on-primary shadow-md">
-                <span className="font-display text-label-bold">
-                  {props.name === null ? "?" : props.name.slice(0, 1).toUpperCase()}
+          <div className="flex items-center gap-3">
+            <CartButton />
+
+            {props.name === null ? (
+              <Link
+                href="/login"
+                className="flex items-center gap-2 rounded-full bg-primary-container px-5 py-3 font-label text-label-bold uppercase tracking-widest text-secondary-fixed transition-transform active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">login</span>
+                <span className="hidden sm:inline">Sign in</span>
+              </Link>
+            ) : (
+              <Link
+                href="/profile"
+                className="flex items-center gap-3 rounded-full py-1 pl-1 pr-1 transition-colors hover:bg-surface-container sm:pr-4"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-container">
+                  {props.avatarUrl ? (
+                    <img src={props.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="font-display text-headline-sm text-secondary-fixed">
+                      {props.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
                 </span>
-              </div>
-            </Link>
+                <span className="hidden text-left sm:block">
+                  <span className="block max-w-[140px] truncate font-label text-label-bold text-on-surface">
+                    {props.name.split("@")[0]}
+                  </span>
+                  <span className="block font-body text-[11px] text-on-surface-variant">
+                    View profile
+                  </span>
+                </span>
+              </Link>
+            )}
           </div>
         </header>
 
-        <main className="relative mx-auto min-h-screen max-w-[var(--container-max)] px-margin-mobile pb-24 pt-20 lg:px-margin-desktop lg:pb-12">
+        <main className="relative mx-auto min-h-screen max-w-[var(--container-max)] px-margin-mobile pb-24 pt-24 lg:px-margin-desktop lg:pb-12">
           {props.children}
         </main>
       </div>
