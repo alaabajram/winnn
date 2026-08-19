@@ -6,14 +6,14 @@ import { FIELD, Field, Card, Btn, Pill, statusTone, Banner, cleanError } from ".
 import ImageUpload from "./image-upload";
 
 const EMPTY: any = {
-  id: "", name: "", slug: "", category: "", description: "", address: "",
+  id: "", name: "", slug: "", category: "", description: "", address: "", district_id: "",
   latitude: "", longitude: "", website: "", contact_name: "", contact_phone: "",
   contact_email: "", logo_url: "", cover_url: "", status: "ACTIVE",
 };
 
 const CATEGORIES = ["Restaurant","Cafe","Grocery","Electronics","Bakery","Pharmacy","Fashion","Fuel","Beauty","Other"];
 
-export default function MerchantsClient(props: { initial: any[] }) {
+export default function MerchantsClient(props: { initial: any[]; districts: any[] }) {
   const [rows, setRows] = useState<any[]>(props.initial);
   const [form, setForm] = useState<any>(null);
   const [busy, setBusy] = useState(false);
@@ -68,7 +68,16 @@ export default function MerchantsClient(props: { initial: any[] }) {
             <Field label="Description" wide hint="Shown on the campaign page next to the business name.">
               <textarea className={FIELD} rows={3} value={form.description || ""} onChange={(e) => set("description", e.target.value)} />
             </Field>
-            <Field label="Address" wide>
+            <Field label="District" hint="Where this business is. Used to filter deals by area.">
+              <select className={FIELD} value={form.district_id || ""}
+                onChange={(e) => set("district_id", e.target.value)}>
+                <option value="">Choose a district</option>
+                {props.districts.map((d) => (
+                  <option key={d.id} value={d.id}>{d.governorate} / {d.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Address">
               <input className={FIELD} value={form.address || ""} onChange={(e) => set("address", e.target.value)} />
             </Field>
             <Field label="Latitude" hint="Optional, for a future map view.">
