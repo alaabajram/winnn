@@ -6,6 +6,8 @@ import { dateFmt, endsLabel } from "@/lib/format";
 import DistrictPicker from "@/components/district-picker";
 import EntryNumber from "@/components/entry-number";
 import DealCard from "@/components/deal-card";
+import BannerCarousel from "@/components/banner-carousel";
+import JsonLd from "@/components/json-ld";
 
 export const dynamic = "force-dynamic";
 
@@ -42,8 +44,39 @@ export default async function Deals(props: any) {
   const { data: auth } = await sb.auth.getUser();
   const signedIn = !!(auth && auth.user);
 
+  let bq = sb.from("banners")
+    .select("id,title,subtitle,image_url,link_url,cta_label,district_id")
+    .eq("is_active", true).order("sort_order");
+  if (active) bq = bq.or("district_id.is.null,district_id.eq." + active.id);
+  else bq = bq.is("district_id", null);
+  const { data: bannerRows } = await bq;
+  const banners: any[] = (bannerRows as any[]) || [];
+
+  const { data: settingsRow } = await sb
+    .from("site_settings").select("site_name,description,logo_url").maybeSingle();
+  const st: any = settingsRow || {};
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://winnn-4x9m.vercel.app";
+
   return (
     <div className="flex w-full flex-col">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: st.site_name || "Winnn",
+        url: site,
+        logo: st.logo_url || undefined,
+        description: st.description || undefined,
+        areaServed: { "@type": "Country", name: "Lebanon" },
+      }} />
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: st.site_name || "Winnn",
+        url: site,
+      }} />
+
+      <BannerCarousel banners={banners} />
+
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-display-sm text-on-background sm:text-display-lg">Deals</h1>
