@@ -9,7 +9,7 @@ export default function DealCard(props: {
   campaign: {
     id: string; slug: string; name: string; image: string | null;
     prizeTitle: string | null; drawDate: string; areaLabel: string;
-    countdown: { days: string; hours: string } | null;
+    ends: { text: string; urgent: boolean; closed: boolean } | null;
   };
   product: {
     id: string; slug: string; name: string; price_cents: number;
@@ -22,8 +22,8 @@ export default function DealCard(props: {
   const [added, setAdded] = useState(false);
   const c = props.campaign;
   const p = props.product;
-
   const max = p ? Math.max(0, p.stock) : 0;
+  const tickets = props.ticketsPerUnit * qty;
 
   function add() {
     if (!p) return;
@@ -37,22 +37,27 @@ export default function DealCard(props: {
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-[24px] bg-surface-container-lowest shadow-md transition-shadow hover:shadow-xl">
-      <Link href={"/campaigns/" + c.slug} className="relative block h-52 overflow-hidden">
+      <Link href={"/campaigns/" + c.slug} className="relative block h-56 overflow-hidden">
         {c.image ? (
           <img src={c.image} alt=""
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         ) : (
           <div className={"h-full w-full " + artFor(c.slug)} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-primary/90 to-transparent" />
 
         <span className="absolute left-4 top-4 rounded-full bg-surface/90 px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface backdrop-blur-sm">
           {c.areaLabel}
         </span>
 
-        {c.countdown ? (
-          <span className="num absolute right-4 top-4 rounded-lg bg-primary-container/80 px-2.5 py-1.5 font-headline text-[13px] text-secondary-fixed backdrop-blur-md">
-            {c.countdown.days}d {c.countdown.hours}h
+        {c.ends ? (
+          <span className={
+            "absolute right-4 top-4 rounded-full px-3 py-1 font-label text-[11px] font-semibold uppercase tracking-widest backdrop-blur-sm " +
+            (c.ends.urgent
+              ? "bg-error text-on-error"
+              : "bg-surface/90 text-on-surface")
+          }>
+            {c.ends.text}
           </span>
         ) : null}
 
@@ -64,35 +69,50 @@ export default function DealCard(props: {
       <div className="flex flex-1 flex-col p-5">
         {p ? (
           <>
-            <div className="mb-4 flex items-center gap-3">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-container">
-                {p.image ? (
-                  <img src={p.image} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className={"h-full w-full " + artFor(p.slug)} />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
+            {/* The product and the tickets are given equal weight: you are
+                buying both, and the ticket is the reason to choose this deal. */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-surface-container p-3">
+                <div className="mb-2 h-16 w-full overflow-hidden rounded-xl bg-surface-variant">
+                  {p.image ? (
+                    <img src={p.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className={"h-full w-full " + artFor(p.slug)} />
+                  )}
+                </div>
+                <p className="truncate font-label text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                  You get
+                </p>
                 <p className="truncate font-label text-label-bold text-on-surface">{p.name}</p>
                 <p className="num font-headline text-headline-sm text-on-surface">
                   {price(p.price_cents)}
                 </p>
               </div>
-              <span className="shrink-0 rounded-xl bg-secondary-container px-3 py-2 text-center">
-                <span className="num block font-headline text-headline-sm text-on-secondary-container">
-                  {props.ticketsPerUnit * qty}
+
+              <div className="relative flex flex-col justify-center overflow-hidden rounded-2xl bg-primary-container p-3 text-center">
+                <span className="absolute -right-5 -top-5 h-16 w-16 rounded-full bg-secondary/25 blur-xl" />
+                <span className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-surface-container-lowest" />
+                <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-surface-container-lowest" />
+
+                <span className="material-symbols-outlined relative text-[22px] text-secondary-fixed">
+                  confirmation_number
                 </span>
-                <span className="block font-label text-[8px] font-semibold uppercase tracking-widest text-on-secondary-container">
-                  tickets
+                <span className="num relative mt-1 block font-display text-[38px] leading-none text-secondary-fixed">
+                  {tickets}
                 </span>
-              </span>
+                <span className="relative mt-1 block font-label text-[10px] font-semibold uppercase tracking-widest text-on-primary-container">
+                  {tickets === 1 ? "draw ticket" : "draw tickets"}
+                </span>
+                <span className="relative mt-1 block font-body text-[11px] text-on-primary-container/80">
+                  free with purchase
+                </span>
+              </div>
             </div>
 
             {max > 0 ? (
               <>
                 <div className="mb-3 flex items-center gap-2">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))}
-                    aria-label="Fewer"
+                  <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Fewer"
                     className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container text-on-surface">
                     <span className="material-symbols-outlined text-[18px]">remove</span>
                   </button>
@@ -137,7 +157,7 @@ export default function DealCard(props: {
 
         <Link href={"/campaigns/" + c.slug}
           className="num mt-3 text-center font-body text-sm text-on-surface-variant hover:text-primary">
-          Draw {c.drawDate} / details
+          Draw {c.drawDate}
         </Link>
       </div>
     </article>
