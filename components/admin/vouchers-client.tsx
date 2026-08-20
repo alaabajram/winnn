@@ -55,6 +55,21 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
     reload();
   }
 
+  async function exportNumbers(id: string, label: string) {
+    const res = await supabaseBrowser().rpc("fn_admin_batch_numbers", { p_batch_id: id });
+    if (res.error) { setMsg({ kind: "error", text: cleanError(res.error.message) }); return; }
+    const rows: any[] = (res.data as any[]) || [];
+    const csv = "serial,entry_number\n" +
+      rows.map((r) => r.serial + "," + r.entry_number).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "winnn-vouchers-" + label + ".csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function cancelBatch(id: string) {
     const reason = window.prompt("Why is this batch being cancelled?");
     if (!reason) return;
@@ -101,8 +116,8 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
         </div>
         {campaign ? (
           <p className="num mt-4 font-body text-sm text-on-surface-variant">
-            Prefix {campaign.serial_prefix} / next serial {campaign.offline_serial_next} /{" "}
-            {remaining.toLocaleString()} remaining in the offline block.
+            Serial prefix {campaign.serial_prefix} / entry prefix {campaign.entry_prefix} / next
+            serial {campaign.offline_serial_next} / {remaining.toLocaleString()} remaining.
           </p>
         ) : null}
       </Card>
@@ -163,6 +178,10 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
                           Distributed
                         </button>
                       ) : null}
+                      <button onClick={() => exportNumbers(b.id, b.serial_from)}
+                        className="rounded-lg border border-outline-variant/40 px-2 py-1 font-label text-[11px] font-semibold hover:bg-surface-container">
+                        Numbers
+                      </button>
                       {b.status !== "CANCELLED" ? (
                         <button onClick={() => cancelBatch(b.id)}
                           className="rounded-lg px-2 py-1 font-label text-[11px] font-semibold text-error hover:bg-error-container">
