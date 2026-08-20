@@ -8,7 +8,7 @@ import { artFor } from "@/lib/art";
 export default function BuyBox(props: {
   product: {
     id: string; slug: string; name: string; description?: string | null;
-    price_cents: number; stock: number; image?: string | null;
+    price_cents: number; stock: number; image?: string | null; images?: string[];
   };
   ticketsPerUnit: number;
   signedIn: boolean;
@@ -36,12 +36,23 @@ export default function BuyBox(props: {
   return (
     <div className="overflow-hidden rounded-[24px] bg-surface-container-lowest shadow-md">
       <div className="flex flex-col gap-5 p-5 sm:flex-row">
-        <div className="h-32 w-full shrink-0 overflow-hidden rounded-2xl bg-surface-container sm:h-28 sm:w-28">
-          {p.image ? (
-            <img src={p.image} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className={"h-full w-full " + artFor(p.slug)} />
-          )}
+        <div className="w-full shrink-0 sm:w-32">
+          <div className="h-32 w-full overflow-hidden rounded-2xl bg-surface-container sm:h-28">
+            {p.image ? (
+              <img src={p.image} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className={"h-full w-full " + artFor(p.slug)} />
+            )}
+          </div>
+          {p.images && p.images.length > 1 ? (
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              {p.images.slice(1, 4).map((src, i) => (
+                <div key={i} className="aspect-square overflow-hidden rounded-lg bg-surface-container">
+                  <img src={src} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -95,11 +106,11 @@ export default function BuyBox(props: {
             </div>
 
             <button onClick={add}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-label text-label-bold uppercase tracking-widest text-on-primary transition-colors hover:bg-inverse-surface">
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary-container px-8 py-4 font-label text-label-bold uppercase tracking-widest text-secondary-fixed shadow-lg transition-transform hover:scale-[1.02] active:scale-95">
               <span className="material-symbols-outlined text-[20px]">
-                {added ? "check" : "shopping_cart"}
+                {added ? "check_circle" : "bolt"}
               </span>
-              {added ? "Added" : "Add to cart"}
+              {added ? "In your cart" : "Buy"}
             </button>
           </>
         ) : (
