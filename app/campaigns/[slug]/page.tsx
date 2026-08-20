@@ -6,6 +6,7 @@ import { dateFmt, endsLabel } from "@/lib/format";
 import { artFor } from "@/lib/art";
 import BuyBox from "@/components/buy-box";
 import EntryNumber from "@/components/entry-number";
+import JsonLd from "@/components/json-ld";
 
 export const dynamic = "force-dynamic";
 
@@ -60,8 +61,59 @@ export default async function Campaign(props: any) {
   const ends = endsLabel(c.sales_close_at);
   const top = prizes[0];
 
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://winnn-4x9m.vercel.app";
+  const primary = links.length ? links[0] : null;
+  const faqRows: any[] = (c.faq as any[]) || [];
+
+  // Product markup describes what is actually for sale. The draw is a
+  // promotion attached to it, not the thing being sold - describing it the
+  // other way round would be inaccurate and would read as a lottery listing.
+  const ld: any[] = [];
+  if (primary) {
+    ld.push({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: primary.products.name,
+      description: primary.products.description || c.description,
+      image: primary.products.images && primary.products.images.length
+        ? primary.products.images : undefined,
+      offers: {
+        "@type": "Offer",
+        price: (Number(primary.products.price_cents) / 100).toFixed(2),
+        priceCurrency: "USD",
+        availability: primary.products.stock > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+        url: site + "/campaigns/" + c.slug,
+      },
+    });
+  }
+  if (faqRows.length) {
+    ld.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqRows
+        .filter((f) => f.q && f.a)
+        .map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+    });
+  }
+  ld.push({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Deals", item: site + "/" },
+      { "@type": "ListItem", position: 2, name: c.name, item: site + "/campaigns/" + c.slug },
+    ],
+  });
+
   return (
     <div className="flex w-full flex-col">
+      {ld.map((d, i) => <JsonLd key={i} data={d} />)}
+
       <Link href="/" className="mb-5 flex items-center gap-1 font-label text-label-bold text-on-surface-variant hover:text-primary">
         <span className="material-symbols-outlined text-[18px]">arrow_back</span>
         Deals
