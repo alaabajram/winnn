@@ -58,6 +58,10 @@ export const SLOTS: Record<string, Slot> = {
     key: "campaign_og", label: "Campaign share image", w: 1200, h: 630, shape: "wide", maxKb: 500,
     note: "Shown when the campaign link is shared on WhatsApp. Falls back to the site default.",
   },
+  banner_home: {
+    key: "banner_home", label: "Home banner", w: 1600, h: 700, shape: "banner", maxKb: 900,
+    note: "Wide promotional banner for the Deals carousel. Keep important detail in the middle third, the edges crop on mobile.",
+  },
   prize_image: {
     key: "prize_image", label: "Prize image", w: 1000, h: 1000, shape: "square", maxKb: 500,
     note: "Square photo of the prize itself.",
