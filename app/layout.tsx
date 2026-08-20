@@ -48,7 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { data: auth } = await sb.auth.getUser();
 
   const { data: settingsRow } = await sb
-    .from("site_settings").select("site_name,logo_url,favicon_url").maybeSingle();
+    .from("site_settings").select("site_name,logo_url,favicon_url,brand_primary,brand_accent").maybeSingle();
   const settings: any = settingsRow || {};
 
   let name: string | null = null;
@@ -75,6 +75,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
+        {/* The colour picker in Admin > Settings writes these. Overriding the
+            theme variables here is what makes it take effect site-wide. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              ":root{" +
+              (settings.brand_primary ? "--color-primary-container:" + settings.brand_primary + ";" : "") +
+              (settings.brand_primary ? "--color-on-primary-fixed:" + settings.brand_primary + ";" : "") +
+              (settings.brand_accent ? "--color-secondary-container:" + settings.brand_accent + ";" : "") +
+              (settings.brand_accent ? "--color-secondary-fixed:" + settings.brand_accent + ";" : "") +
+              "}",
+          }}
+        />
         <CartProvider>
           <Shell
             name={name}
