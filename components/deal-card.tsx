@@ -37,7 +37,12 @@ export default function DealCard(props: {
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-[24px] bg-surface-container-lowest shadow-md transition-shadow hover:shadow-xl">
-      <Link href={"/campaigns/" + c.slug} className="relative block h-56 overflow-hidden">
+      <Link
+        href={"/campaigns/" + c.slug}
+        className={
+          "relative block overflow-hidden " + (p ? "h-56" : "h-80")
+        }
+      >
         {c.image ? (
           <img src={c.image} alt=""
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -130,11 +135,11 @@ export default function DealCard(props: {
                 </div>
 
                 <button onClick={add}
-                  className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-label text-label-bold uppercase tracking-widest text-on-primary transition-colors hover:bg-inverse-surface">
+                  className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-primary-container py-4 font-label text-label-bold uppercase tracking-widest text-secondary-fixed shadow-lg transition-transform hover:scale-[1.01] active:scale-95">
                   <span className="material-symbols-outlined text-[20px]">
-                    {added ? "check" : "shopping_cart"}
+                    {added ? "check_circle" : "bolt"}
                   </span>
-                  {added ? "Added" : "Add to cart"}
+                  {added ? "In your cart" : "Buy"}
                 </button>
               </>
             ) : (
