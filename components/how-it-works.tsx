@@ -15,94 +15,94 @@ type Step = {
 
 const ONLINE: Step[] = [
   {
-    n: 1, title: "Choose a campaign and buy tickets", icon: "campaign",
+    n: 1, title: "Pick a deal", icon: "local_offer",
     tone: "bg-primary-container", text: "text-on-primary",
     screen: "campaign",
-    body: "Pick the draw you want to enter and how many tickets. You pay the ticket price in Winnn.",
+    body: "Every deal is a real product at a real price. The draw tickets come free with it.",
     detail: [
-      "Every campaign sets its own price per ticket",
-      "The full amount you pay lands in your wallet as Winnn",
-      "1 Winnn = 1 USD",
+      "Browse deals near you, or across Lebanon",
+      "The card shows the product, the price and how many tickets it carries",
+      "Buy more than one and the tickets multiply",
     ],
   },
   {
-    n: 2, title: "Your tickets appear instantly", icon: "confirmation_number",
+    n: 2, title: "Check out as normal", icon: "shopping_cart",
     tone: "bg-secondary-container", text: "text-on-secondary-container",
-    screen: "tickets",
-    body: "Each ticket gets a printed serial number. They sit in your wallet until the draw.",
-    detail: [
-      "Serials look like SUM26-500123",
-      "Visible any time under Wallet",
-      "Nothing expires before the draw date",
-    ],
-  },
-  {
-    n: 3, title: "Spend your Winnn in the store", icon: "shopping_bag",
-    tone: "bg-tertiary-container", text: "text-tertiary-fixed",
     screen: "store",
-    body: "The credits you paid are still yours. Buy real products with them, and your tickets stay valid.",
+    body: "Add to cart, enter your delivery address, and pay. Nothing unusual, nothing to top up.",
     detail: [
-      "Spending credits never cancels a ticket",
-      "Paid straight from your wallet, no card needed",
-      "Stock and prices are checked at checkout",
+      "You are buying the product, not buying entries",
+      "Delivery address is taken at checkout",
+      "You get a receipt by email",
     ],
   },
   {
-    n: 4, title: "Watch the draw and see if you won", icon: "emoji_events",
+    n: 3, title: "Your tickets appear automatically", icon: "confirmation_number",
+    tone: "bg-tertiary-container", text: "text-tertiary-fixed",
+    screen: "tickets",
+    body: "The moment your payment clears, the tickets land in your account. There is nothing to claim or activate.",
+    detail: [
+      "Each ticket gets its own printed serial number",
+      "Visible any time under My tickets",
+      "You are already in the draw, no further step",
+    ],
+  },
+  {
+    n: 4, title: "Watch the draw", icon: "emoji_events",
     tone: "bg-surface-tint", text: "text-on-primary",
     screen: "draw",
-    body: "Online serials are printed and put into the same physical drum as the in-store tickets.",
+    body: "Your serials are printed after entries close and go into the same physical drum as the shop copies.",
     detail: [
-      "The draw is physical, recorded on video",
-      "Winning serial and ticket counts are published",
-      "Losing tickets move to your activity history",
+      "The draw is physical and recorded on video",
+      "Winning number and ticket counts are published",
+      "Winners are contacted on the number in their profile",
     ],
   },
 ];
 
 const OFFLINE: Step[] = [
   {
-    n: 1, title: "Shop at a participating business", icon: "storefront",
+    n: 1, title: "Shop at a partner", icon: "storefront",
     tone: "bg-primary-container", text: "text-on-primary",
     screen: "voucher",
-    body: "Buy something at a partner shop and they hand you a printed Winnn voucher. No purchase of credits.",
+    body: "Buy something at a participating business and they hand you a printed Winnn ticket. Free with your purchase.",
     detail: [
-      "Each business decides when it gives a voucher",
+      "Each business decides when it gives one out",
       "Nothing to install or sign up for in the shop",
-      "The voucher is free with your purchase",
+      "You do not pay anything extra for the ticket",
     ],
   },
   {
-    n: 2, title: "Keep your half of the voucher", icon: "content_cut",
+    n: 2, title: "Keep your half", icon: "content_cut",
     tone: "bg-secondary-container", text: "text-on-secondary-container",
     screen: "voucher",
-    body: "The voucher tears in two. The shop keeps one half for the drum, you keep the half with the secret code.",
+    body: "The ticket tears in two. The shop keeps one half for the drum, you keep the half with the number on it.",
     detail: [
-      "Your half carries the serial and a secret code",
-      "The shop's half goes into the physical drum",
-      "Keep it safe, it is your proof of the ticket",
+      "The shop half goes into the physical drum",
+      "Your half carries the 16-digit number",
+      "You are already entered at this point",
     ],
   },
   {
-    n: 3, title: "Add it to your wallet", icon: "qr_code_scanner",
+    n: 3, title: "Enter the number and double your chance", icon: "pin",
     tone: "bg-tertiary-container", text: "text-tertiary-fixed",
     screen: "scan",
-    body: "Open Winnn, enter the serial and code from your voucher, and it becomes a digital ticket.",
+    body: "Type the number from your half into the app. We print a second slip and add it to the same drum.",
     detail: [
-      "Both the serial and the code are required",
-      "Each voucher can only be added once",
-      "You can check it any time under Wallet",
+      "One number, no code and no campaign to choose",
+      "The number knows which draw it belongs to",
+      "Two slips in the drum instead of one",
     ],
   },
   {
     n: 4, title: "Same drum, same draw", icon: "emoji_events",
     tone: "bg-surface-tint", text: "text-on-primary",
     screen: "draw",
-    body: "In-store tickets go into exactly the same drum as the online ones. One pool, one draw.",
+    body: "Shop tickets and online tickets go into one drum. There is no separate draw.",
     detail: [
-      "No separate draw for in-store entries",
-      "If your voucher wins before you add it, claim it with your half",
-      "Ticket counts from both routes are published",
+      "If your ticket wins before you enter it, claim it with your half",
+      "Counts for both routes are published after the draw",
+      "Entering online is what puts your name to the ticket",
     ],
   },
 ];
@@ -311,18 +311,18 @@ export default function HowItWorks(props: { merchants: any[]; hasLive: boolean }
           How it works
         </span>
         <h1 className="mx-auto mt-6 max-w-2xl font-display text-display-sm text-on-background sm:text-display-lg">
-          Two ways in. One drum.
+          Buy a product. Win a prize.
         </h1>
         <p className="mx-auto mt-4 max-w-xl font-body text-body-lg text-on-surface-variant">
-          Buy Winnn credits online, or pick up a free voucher when you shop with a partner business.
-          Both routes put a ticket in the same physical draw.
+          Buy a product online and the tickets come free, or pick one up when you shop with a
+          partner business. Both routes put a ticket in the same physical drum.
         </p>
       </header>
 
       <div className="mx-auto mb-10 flex w-full max-w-md rounded-2xl bg-surface-container p-1.5">
         {([
-          { k: "online", label: "Online", icon: "smartphone" },
-          { k: "offline", label: "In store", icon: "storefront" },
+          { k: "online", label: "Buy online", icon: "smartphone" },
+          { k: "offline", label: "In a shop", icon: "storefront" },
         ] as const).map((t) => (
           <button
             key={t.k}
@@ -511,24 +511,32 @@ export default function HowItWorks(props: { merchants: any[]; hasLive: boolean }
         <div className="space-y-3">
           {[
             {
-              q: "Do I lose my tickets if I spend my Winnn?",
-              a: "No. Tickets are issued when you buy them and stay valid regardless of what you do with the credits afterwards. Spending in the store never cancels a ticket.",
+              q: "Am I paying for the tickets?",
+              a: "No. You are buying a product at its normal price. The draw tickets come free with the purchase, which is why the number of tickets goes up when you buy more.",
             },
             {
-              q: "Is the in-store voucher really free?",
-              a: "Yes. Partner businesses give them out with a qualifying purchase at their own discretion. You do not buy Winnn credits to get one.",
+              q: "When do my tickets appear?",
+              a: "As soon as your payment clears. They show under My tickets with their own serial numbers, and you are in the draw from that moment.",
             },
             {
-              q: "What if I never scan my voucher and it wins?",
-              a: "The store copy is still in the drum, so it can still be drawn. Hold on to your half: you claim the prize by entering the serial and secret code printed on it.",
+              q: "Is the shop ticket really free?",
+              a: "Yes. Partner businesses hand them out with a qualifying purchase at their own discretion. You do not pay anything for the ticket itself.",
+            },
+            {
+              q: "What does entering the number online actually do?",
+              a: "The shop keeps one half of your ticket and that half is already in the drum. Entering the number online means we print a second slip and add it too, so you have two chances instead of one.",
+            },
+            {
+              q: "Can I enter a ticket I bought online?",
+              a: "No, and there is nothing to gain. Tickets bought online are already counted in the drum. The entry box is only for the number printed on a paper ticket from a shop.",
+            },
+            {
+              q: "What if I never enter my shop ticket and it wins?",
+              a: "The shop half is still in the drum, so it can still be drawn. Keep your half: you claim the prize with the number printed on it.",
             },
             {
               q: "How do I know the draw is fair?",
-              a: "It is physical and recorded. After each draw we publish how many online tickets and how many store copies were in the drum, so the counts can be checked against the video.",
-            },
-            {
-              q: "Can I get my money back?",
-              a: "Winnn credits are spendable in the store and are not exchangeable for cash. If a store order arrives wrong or not at all, the value is returned to your wallet as Winnn.",
+              a: "It is physical and recorded. After each draw we publish how many online tickets, shop copies and doubled slips were in the drum, so the counts can be checked against the video.",
             },
           ].map((f) => (
             <details key={f.q} className="group rounded-2xl bg-surface-container-lowest p-5 shadow-sm">
