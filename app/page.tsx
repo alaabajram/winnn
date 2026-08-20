@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
-import { dateFmt } from "@/lib/format";
-import { splitCountdown } from "@/lib/art";
+import { dateFmt, endsLabel } from "@/lib/format";
+
 import DistrictPicker from "@/components/district-picker";
-import VoucherEntry from "@/components/voucher-entry";
+import EntryNumber from "@/components/entry-number";
 import DealCard from "@/components/deal-card";
 
 export const dynamic = "force-dynamic";
@@ -94,7 +94,7 @@ export default async function Deals(props: any) {
                 areaLabel: c.is_nationwide
                   ? "All Lebanon"
                   : c.districts ? c.districts.name : "Local",
-                countdown: splitCountdown(c.sales_close_at),
+                ends: endsLabel(c.sales_close_at),
               }}
               product={
                 product
@@ -110,7 +110,7 @@ export default async function Deals(props: any) {
       </div>
 
       <div className="mt-10">
-        <VoucherEntry signedIn={signedIn} />
+        <EntryNumber signedIn={signedIn} />
       </div>
 
       {past.length > 0 ? (
