@@ -7,7 +7,7 @@ import ImageUpload from "./image-upload";
 
 const EMPTY: any = {
   id: "", name: "", slug: "", category: "", description: "", address: "", district_id: "",
-  latitude: "", longitude: "", website: "", contact_name: "", contact_phone: "",
+  map_url: "", website: "", contact_name: "", contact_phone: "",
   contact_email: "", logo_url: "", cover_url: "", status: "ACTIVE",
 };
 
@@ -80,11 +80,10 @@ export default function MerchantsClient(props: { initial: any[]; districts: any[
             <Field label="Address">
               <input className={FIELD} value={form.address || ""} onChange={(e) => set("address", e.target.value)} />
             </Field>
-            <Field label="Latitude" hint="Optional, for a future map view.">
-              <input className={FIELD} value={form.latitude || ""} onChange={(e) => set("latitude", e.target.value)} />
-            </Field>
-            <Field label="Longitude">
-              <input className={FIELD} value={form.longitude || ""} onChange={(e) => set("longitude", e.target.value)} />
+            <Field label="Google Maps link" wide
+              hint="Open the shop in Google Maps, tap Share, and paste the link. We read the coordinates from it.">
+              <input className={FIELD} placeholder="https://maps.app.goo.gl/..."
+                value={form.map_url || ""} onChange={(e) => set("map_url", e.target.value)} />
             </Field>
             <Field label="Website">
               <input className={FIELD} placeholder="https://" value={form.website || ""} onChange={(e) => set("website", e.target.value)} />
