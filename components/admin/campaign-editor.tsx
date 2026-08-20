@@ -31,7 +31,6 @@ export default function CampaignEditor(props: {
     slug: c ? c.slug : "",
     description: c ? c.description || "" : "",
     type: c ? c.type : "HYBRID",
-    ticket_price: c ? (Number(c.ticket_price_cents) / 100).toString() : "10",
     owner_merchant_id: c ? c.owner_merchant_id || "" : "",
     hero_image_url: c ? c.hero_image_url || "" : "",
     thumbnail_url: c ? c.thumbnail_url || "" : "",
@@ -49,7 +48,6 @@ export default function CampaignEditor(props: {
     meta_description: c ? c.meta_description || "" : "",
     og_image_url: c ? c.og_image_url || "" : "",
     keywords: c && c.keywords ? c.keywords.join(", ") : "",
-    ai_summary: c ? c.ai_summary || "" : "",
     noindex: c ? !!c.noindex : false,
   });
 
@@ -89,7 +87,6 @@ export default function CampaignEditor(props: {
       slug: f.slug || null,
       description: f.description,
       type: f.type,
-      ticket_price_cents: String(toCents(f.ticket_price)),
       owner_merchant_id: f.owner_merchant_id || null,
       hero_image_url: f.hero_image_url,
       thumbnail_url: f.thumbnail_url,
@@ -108,7 +105,6 @@ export default function CampaignEditor(props: {
       meta_description: f.meta_description,
       og_image_url: f.og_image_url,
       keywords: f.keywords.split(",").map((x: string) => x.trim()).filter(Boolean),
-      ai_summary: f.ai_summary,
       faq: faq.filter((x) => x.q && x.a),
       noindex: f.noindex,
     };
@@ -234,9 +230,22 @@ export default function CampaignEditor(props: {
           <Field label="Campaign name" wide>
             <input className={FIELD} value={f.name} onChange={(e) => set("name", e.target.value)} />
           </Field>
-          <Field label="Description" wide hint="Shown under the headline on the campaign page.">
-            <textarea className={FIELD} rows={3} value={f.description} onChange={(e) => set("description", e.target.value)} />
-          </Field>
+          <div className="sm:col-span-2">
+            <div className="mb-2 flex items-baseline justify-between">
+              <label className="font-label text-label-bold text-on-surface-variant">Description</label>
+              <span className={
+                "num font-label text-[11px] font-semibold " +
+                ((f.description || "").length > 300 ? "text-error" : "text-on-surface-variant")
+              }>
+                {(f.description || "").length}/300
+              </span>
+            </div>
+            <textarea className={FIELD} rows={3} maxLength={300} value={f.description}
+              onChange={(e) => set("description", e.target.value)} />
+            <p className="mt-1.5 font-body text-sm text-on-surface-variant">
+              One or two sentences. Shown under the prize name on the campaign page.
+            </p>
+          </div>
           <Field label="Entry type">
             <select className={FIELD} value={f.type} onChange={(e) => set("type", e.target.value)}>
               <option value="HYBRID">Hybrid - online and in store</option>
@@ -244,19 +253,21 @@ export default function CampaignEditor(props: {
               <option value="OFFLINE">In store only</option>
             </select>
           </Field>
-          <Field label="Price per ticket (Winnn)">
-            <input className={FIELD + " num"} inputMode="decimal" value={f.ticket_price}
-              onChange={(e) => set("ticket_price", e.target.value)} />
-          </Field>
+
           <Field label="Owner merchant" hint="The headline sponsor for this campaign.">
             <select className={FIELD} value={f.owner_merchant_id} onChange={(e) => set("owner_merchant_id", e.target.value)}>
               <option value="">None</option>
               {props.merchants.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
-          <Field label="Brand colour">
-            <input className={FIELD + " num"} placeholder="#0d1c32" value={f.brand_color}
-              onChange={(e) => set("brand_color", e.target.value)} />
+          <Field label="Brand colour" hint="Optional. Accent for this campaign only.">
+            <div className="flex gap-3">
+              <input type="color" className="h-12 w-14 cursor-pointer rounded-lg border border-outline-variant/40"
+                value={f.brand_color || "#0d1c32"}
+                onChange={(e) => set("brand_color", e.target.value)} />
+              <input className={FIELD + " num"} placeholder="#0d1c32" value={f.brand_color}
+                onChange={(e) => set("brand_color", e.target.value)} />
+            </div>
           </Field>
         </div>
       </Section>
@@ -512,12 +523,7 @@ export default function CampaignEditor(props: {
             <ImageUpload slot="campaign_og" folder="campaigns"
               value={f.og_image_url} onChange={(url) => set("og_image_url", url)} />
           </div>
-          <Field
-            label="AI summary"
-            hint="A factual paragraph an assistant can quote: the prize, how to enter, the closing date, and that the draw is physical."
-          >
-            <textarea className={FIELD} rows={4} value={f.ai_summary} onChange={(e) => set("ai_summary", e.target.value)} />
-          </Field>
+
         </div>
 
         <div className="mt-6">
