@@ -27,6 +27,7 @@ const GROUPS = [
   {
     label: "Website",
     items: [
+      { href: "/admin/banners", label: "Banners", icon: "view_carousel" },
       { href: "/admin/seo", label: "SEO", icon: "travel_explore" },
       { href: "/admin/settings", label: "Settings", icon: "settings" },
     ],
