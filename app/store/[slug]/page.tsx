@@ -5,6 +5,7 @@ import { price } from "@/lib/money";
 import { dateFmt } from "@/lib/format";
 import { artFor } from "@/lib/art";
 import BuyBox from "@/components/buy-box";
+import Gallery from "@/components/gallery";
 
 export const dynamic = "force-dynamic";
 
@@ -35,22 +36,7 @@ export default async function ProductPage(props: any) {
 
       <div className="grid grid-cols-1 gap-gutter lg:grid-cols-2">
         <div>
-          <div className="aspect-square w-full overflow-hidden rounded-[28px] bg-surface-container">
-            {images.length ? (
-              <img src={images[0]} alt={p.name} className="h-full w-full object-cover" />
-            ) : (
-              <div className={"h-full w-full " + artFor(p.slug)} />
-            )}
-          </div>
-          {images.length > 1 ? (
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              {images.slice(1, 4).map((src, i) => (
-                <div key={i} className="aspect-square overflow-hidden rounded-2xl bg-surface-container">
-                  <img src={src} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          ) : null}
+          <Gallery images={images} slug={p.slug} alt={p.name} />
         </div>
 
         <div>
