@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { price } from "@/lib/money";
-import { dateFmt } from "@/lib/format";
-import { artFor, splitCountdown } from "@/lib/art";
+import { dateFmt, endsLabel } from "@/lib/format";
+import { artFor } from "@/lib/art";
 import BuyBox from "@/components/buy-box";
+import EntryNumber from "@/components/entry-number";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function Campaign(props: any) {
 
   const { data } = await sb
     .from("campaigns")
-    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,hero_image_url,is_nationwide,ai_summary,faq,districts(name,governorate),campaign_prizes(position,title,value_cents),campaign_products(tickets_per_unit,is_primary,sort_order,products(id,name,slug,description,price_cents,stock,images,status)),campaign_merchants(merchants(name,category,address,logo_url,districts(name)))")
+    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,hero_image_url,is_nationwide,districts(name),campaign_prizes(position,title,value_cents,image_url),campaign_products(tickets_per_unit,is_primary,sort_order,products(id,name,slug,description,price_cents,stock,images,status)),campaign_merchants(merchants(name,category,address,logo_url,districts(name)))")
     .eq("slug", params.slug)
     .maybeSingle();
   if (!data) notFound();
@@ -50,12 +51,13 @@ export default async function Campaign(props: any) {
     mine = count || 0;
   }
 
-  const prizes: any[] = ((c.campaign_prizes as any[]) || []).slice().sort((a, b) => a.position - b.position);
+  const prizes: any[] = ((c.campaign_prizes as any[]) || [])
+    .slice().sort((a, b) => a.position - b.position);
   const links: any[] = ((c.campaign_products as any[]) || [])
     .filter((x) => x.products && x.products.status === "ACTIVE")
-    .sort((a, b) => (a.is_primary ? -1 : 0) - (b.is_primary ? -1 : 0) || a.sort_order - b.sort_order);
+    .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) || a.sort_order - b.sort_order);
   const merchants: any[] = (c.campaign_merchants as any[]) || [];
-  const cd = splitCountdown(c.sales_close_at);
+  const ends = endsLabel(c.sales_close_at);
   const top = prizes[0];
 
   return (
@@ -65,41 +67,51 @@ export default async function Campaign(props: any) {
         Deals
       </Link>
 
-      <section className="relative mb-8 overflow-hidden rounded-[28px] shadow-2xl">
-        {c.hero_image_url ? (
-          <img src={c.hero_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <div className={"absolute inset-0 " + artFor(c.slug)} />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-primary/10" />
+      {/* 1. BANNER - image only. Text sits underneath so nothing competes
+             with the artwork or becomes unreadable over it. */}
+      <section className="relative mb-6 overflow-hidden rounded-[28px] bg-surface-container shadow-lg">
+        <div className="aspect-[16/9] w-full sm:aspect-[21/9]">
+          {c.hero_image_url ? (
+            <img src={c.hero_image_url} alt={c.name} className="h-full w-full object-cover" />
+          ) : (
+            <div className={"h-full w-full " + artFor(c.slug)} />
+          )}
+        </div>
 
-        <div className="relative z-10 flex min-h-[340px] flex-col justify-end p-6 sm:p-10">
-          <div className="mb-3 flex flex-wrap gap-2">
-            <span className="rounded-full bg-surface/15 px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-primary backdrop-blur-sm">
-              {c.is_nationwide ? "All Lebanon" : c.districts ? c.districts.name : "Local"}
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-surface/90 px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-surface backdrop-blur-sm">
+            {c.is_nationwide ? "All Lebanon" : c.districts ? c.districts.name : "Local"}
+          </span>
+          {ends ? (
+            <span className={
+              "rounded-full px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest backdrop-blur-sm " +
+              (ends.urgent ? "bg-error text-on-error" : "bg-surface/90 text-on-surface")
+            }>
+              {ends.text}
             </span>
-            {cd ? (
-              <span className="num rounded-full bg-secondary-container px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-secondary-container">
-                {cd.days}d {cd.hours}h left
-              </span>
-            ) : null}
-          </div>
-
-          <h1 className="font-display text-[32px] leading-tight text-on-primary drop-shadow sm:text-display-lg">
-            {top ? top.title.split("-").slice(1).join("-").trim() || top.title : c.name}
-          </h1>
-          <p className="mt-2 max-w-xl font-body text-body-lg text-primary-fixed-dim">
-            {c.description}
-          </p>
+          ) : null}
         </div>
       </section>
 
+      <header className="mb-8">
+        <h1 className="font-display text-display-sm text-on-background sm:text-display-lg">
+          {top ? top.title.split("-").slice(1).join("-").trim() || top.title : c.name}
+        </h1>
+        <p className="mt-2 max-w-2xl font-body text-body-lg leading-relaxed text-on-surface-variant">
+          {c.description}
+        </p>
+        <p className="num mt-3 font-label text-label-bold uppercase tracking-widest text-secondary">
+          Draw {dateFmt(c.draw_date)}
+        </p>
+      </header>
+
       <div className="grid grid-cols-1 gap-gutter lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="space-y-10 lg:col-span-2">
+          {/* 2. PRODUCT + TICKET + PRICE */}
           {links.length ? (
-            <>
+            <section>
               <h2 className="mb-4 font-headline text-headline-md text-on-background">
-                Buy any of these to enter
+                Buy to enter
               </h2>
               <div className="space-y-4">
                 {links.map((l) => (
@@ -116,7 +128,7 @@ export default async function Campaign(props: any) {
                   />
                 ))}
               </div>
-            </>
+            </section>
           ) : (
             <div className="rounded-3xl bg-surface-container p-8 text-center">
               <span className="material-symbols-outlined text-[36px] text-on-surface-variant">storefront</span>
@@ -127,29 +139,51 @@ export default async function Campaign(props: any) {
             </div>
           )}
 
+          {/* 3. PRIZES, each with its own image */}
           {prizes.length ? (
-            <>
-              <h2 className="mb-4 mt-10 font-headline text-headline-md text-on-background">Prizes</h2>
-              <div className="space-y-3">
+            <section>
+              <h2 className="mb-4 font-headline text-headline-md text-on-background">
+                What you could win
+              </h2>
+              <div className="space-y-4">
                 {prizes.map((p) => (
                   <div key={p.position}
-                    className="flex items-center justify-between rounded-2xl bg-surface-container-lowest p-5 shadow-sm">
-                    <div className="flex items-center gap-4">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container font-headline text-on-secondary-container">
-                        {p.position}
+                    className="flex flex-col overflow-hidden rounded-[24px] bg-surface-container-lowest shadow-md sm:flex-row">
+                    <div className="h-44 w-full shrink-0 overflow-hidden bg-surface-container sm:h-auto sm:w-52">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.title} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className={"flex h-full w-full items-center justify-center " + artFor(c.slug + p.position)}>
+                          <span className="material-symbols-outlined text-[40px] text-white/70">
+                            redeem
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-1 flex-col justify-center p-5">
+                      <span className="mb-2 w-fit rounded-full bg-secondary-container px-3 py-1 font-label text-[10px] font-semibold uppercase tracking-widest text-on-secondary-container">
+                        {p.position === 1 ? "Grand prize" : "Prize " + p.position}
                       </span>
-                      <span className="font-headline text-headline-sm text-on-surface">{p.title}</span>
+                      <h3 className="font-headline text-headline-md text-on-surface">{p.title}</h3>
+                      {p.value_cents ? (
+                        <p className="num mt-1 font-display text-headline-md text-secondary">
+                          {price(p.value_cents)}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ))}
               </div>
-            </>
+            </section>
           ) : null}
 
+          {/* 4. ALREADY HAVE A TICKET */}
+          <EntryNumber signedIn={signedIn} campaignName={c.name} />
+
           {merchants.length ? (
-            <>
-              <h2 className="mb-4 mt-10 font-headline text-headline-md text-on-background">
-                Or get a free voucher here
+            <section>
+              <h2 className="mb-4 font-headline text-headline-md text-on-background">
+                Get a free voucher here
               </h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {merchants.map((m: any, i: number) => (
@@ -167,17 +201,16 @@ export default async function Campaign(props: any) {
                       </p>
                       <p className="truncate font-body text-sm text-on-surface-variant">
                         {m.merchants && m.merchants.districts ? m.merchants.districts.name : ""}
-                        {m.merchants && m.merchants.address ? " / " + m.merchants.address : ""}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-            </>
+            </section>
           ) : null}
         </div>
 
-        <aside className="lg:col-span-1">
+        <aside>
           <div className="sticky top-24 space-y-4">
             <div className="rounded-3xl bg-primary-container p-6 text-on-primary-container">
               <p className="font-label text-[10px] uppercase tracking-widest opacity-70">Your tickets</p>
