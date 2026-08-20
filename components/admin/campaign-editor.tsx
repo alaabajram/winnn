@@ -58,8 +58,9 @@ export default function CampaignEditor(props: {
       ? props.prizes.map((p) => ({
           position: p.position, title: p.title,
           value: p.value_cents ? (Number(p.value_cents) / 100).toString() : "",
+          image_url: p.image_url || "",
         }))
-      : [{ position: 1, title: "", value: "" }]
+      : [{ position: 1, title: "", value: "", image_url: "" }]
   );
   const [faq, setFaq] = useState<any[]>(
     c && c.faq && (c.faq as any[]).length ? (c.faq as any[]) : [{ q: "", a: "" }]
@@ -122,7 +123,11 @@ export default function CampaignEditor(props: {
       p_campaign_id: newId,
       p_prizes: prizes
         .filter((p) => p.title)
-        .map((p, i) => ({ position: i + 1, title: p.title, value_cents: String(toCents(p.value)) })),
+        .map((p, i) => ({
+          position: i + 1, title: p.title,
+          value_cents: String(toCents(p.value)),
+          image_url: p.image_url || null,
+        })),
     });
     await sb.rpc("fn_admin_set_campaign_merchants", {
       p_campaign_id: newId, p_merchant_ids: selected,
@@ -257,38 +262,60 @@ export default function CampaignEditor(props: {
       </Section>
 
       <Section title="Prizes">
-        <div className="space-y-4">
+        <p className="mb-5 font-body text-body-md text-on-surface-variant">
+          Each prize can carry its own photo. It is shown beside the prize on the campaign page.
+        </p>
+
+        <div className="space-y-5">
           {prizes.map((p, i) => (
-            <div key={i} className="grid grid-cols-12 items-end gap-3">
-              <div className="col-span-1 pb-3 text-center font-headline text-headline-sm text-on-surface-variant">
-                {i + 1}
-              </div>
-              <div className="col-span-11 sm:col-span-7">
-                <label className="mb-2 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Title</label>
-                <input className={FIELD} placeholder="Grand Prize - $100,000 cash" value={p.title}
-                  onChange={(e) => {
-                    const n = prizes.slice(); n[i] = { ...n[i], title: e.target.value }; setPrizes(n);
-                  }} />
-              </div>
-              <div className="col-span-9 sm:col-span-3">
-                <label className="mb-2 block font-label text-[11px] uppercase tracking-widest text-on-surface-variant">Value (Winnn)</label>
-                <input className={FIELD + " num"} inputMode="decimal" value={p.value}
-                  onChange={(e) => {
-                    const n = prizes.slice(); n[i] = { ...n[i], value: e.target.value }; setPrizes(n);
-                  }} />
-              </div>
-              <div className="col-span-3 sm:col-span-1 flex justify-end pb-2">
+            <div key={i} className="rounded-2xl border border-outline-variant/30 p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="num font-headline text-headline-sm text-on-surface-variant">
+                  {i === 0 ? "Grand prize" : "Prize " + (i + 1)}
+                </span>
                 {prizes.length > 1 ? (
-                  <button onClick={() => setPrizes(prizes.filter((_, x) => x !== i))} className="text-error">
+                  <button onClick={() => setPrizes(prizes.filter((_, x) => x !== i))}
+                    className="text-error">
                     <span className="material-symbols-outlined">delete</span>
                   </button>
                 ) : null}
               </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                <div className="sm:col-span-1">
+                  <ImageUpload
+                    slot="prize_image"
+                    folder="prizes"
+                    value={p.image_url || ""}
+                    onChange={(url) => {
+                      const n = prizes.slice(); n[i] = { ...n[i], image_url: url }; setPrizes(n);
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-4 sm:col-span-2">
+                  <Field label="Title">
+                    <input className={FIELD} placeholder="Grand Prize - 1000 USD cash"
+                      value={p.title}
+                      onChange={(e) => {
+                        const n = prizes.slice(); n[i] = { ...n[i], title: e.target.value }; setPrizes(n);
+                      }} />
+                  </Field>
+                  <Field label="Value (USD)" hint="Optional. Shown under the title.">
+                    <input className={FIELD + " num"} inputMode="decimal" value={p.value}
+                      onChange={(e) => {
+                        const n = prizes.slice(); n[i] = { ...n[i], value: e.target.value }; setPrizes(n);
+                      }} />
+                  </Field>
+                </div>
+              </div>
             </div>
           ))}
         </div>
+
         <div className="mt-5">
-          <Btn tone="ghost" onClick={() => setPrizes([...prizes, { position: prizes.length + 1, title: "", value: "" }])}>
+          <Btn tone="ghost"
+            onClick={() => setPrizes([...prizes, { position: prizes.length + 1, title: "", value: "", image_url: "" }])}>
             Add prize
           </Btn>
         </div>
