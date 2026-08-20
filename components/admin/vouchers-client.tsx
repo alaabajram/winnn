@@ -15,7 +15,22 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
   const [copies, setCopies] = useState<any>({});
   const router = useRouter();
 
+  const [campaignMerchants, setCampaignMerchants] = useState<any[]>([]);
   const campaign = props.campaigns.find((c) => c.id === campaignId);
+
+  // A voucher batch belongs to one shop, and only shops attached to the
+  // campaign can hand them out. Narrow the list rather than making the admin
+  // remember which is which.
+  async function onCampaign(id: string) {
+    setCampaignId(id);
+    setMerchantId("");
+    setCampaignMerchants([]);
+    if (!id) return;
+    const res = await supabaseBrowser().rpc("fn_campaign_merchant_options", { p_campaign_id: id });
+    const rows: any[] = (res.data as any[]) || [];
+    setCampaignMerchants(rows);
+    if (rows.length === 1) setMerchantId(rows[0].id);
+  }
   const remaining = campaign
     ? Number(campaign.offline_serial_end) - Number(campaign.offline_serial_next) + 1
     : 0;
@@ -94,15 +109,22 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
       <Card title="Generate a batch">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
           <Field label="Campaign">
-            <select className={FIELD} value={campaignId} onChange={(e) => setCampaignId(e.target.value)}>
+            <select className={FIELD} value={campaignId} onChange={(e) => onCampaign(e.target.value)}>
               <option value="">Choose</option>
               {props.campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="Merchant">
-            <select className={FIELD} value={merchantId} onChange={(e) => setMerchantId(e.target.value)}>
-              <option value="">Choose</option>
-              {props.merchants.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          <Field label="Merchant"
+            hint={campaignId && !campaignMerchants.length
+              ? "This campaign has no shops attached yet. Add them in the campaign editor."
+              : undefined}>
+            <select className={FIELD} value={merchantId} onChange={(e) => setMerchantId(e.target.value)}
+              disabled={!campaignId}>
+              <option value="">
+                {!campaignId ? "Choose a campaign first" : "Choose"}
+              </option>
+              {(campaignMerchants.length ? campaignMerchants : props.merchants)
+                .map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
           <Field label="Quantity">
