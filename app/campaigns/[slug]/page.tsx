@@ -34,7 +34,7 @@ export default async function Campaign(props: any) {
 
   const { data } = await sb
     .from("campaigns")
-    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,hero_image_url,is_nationwide,districts(name),campaign_prizes(position,title,value_cents,image_url),campaign_products(tickets_per_unit,is_primary,sort_order,products(id,name,slug,description,price_cents,stock,images,status)),campaign_merchants(merchants(name,category,address,logo_url,districts(name)))")
+    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,hero_image_url,is_nationwide,districts(name),campaign_prizes(position,title,value_cents,image_url),campaign_products(tickets_per_unit,is_primary,sort_order,products(id,name,slug,description,price_cents,stock,images,status)),campaign_merchants(merchants(name,category,address,logo_url,map_url,districts(name)))")
     .eq("slug", params.slug)
     .maybeSingle();
   if (!data) notFound();
@@ -124,6 +124,7 @@ export default async function Campaign(props: any) {
                       description: l.products.description, price_cents: l.products.price_cents,
                       stock: l.products.stock,
                       image: l.products.images && l.products.images.length ? l.products.images[0] : null,
+                      images: (l.products.images as string[]) || [],
                     }}
                   />
                 ))}
@@ -189,20 +190,28 @@ export default async function Campaign(props: any) {
                 {merchants.map((m: any, i: number) => (
                   <div key={i} className="flex items-center gap-4 rounded-2xl bg-surface-container-lowest p-4 shadow-sm">
                     {m.merchants && m.merchants.logo_url ? (
-                      <img src={m.merchants.logo_url} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                      <img src={m.merchants.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
                     ) : (
-                      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-container text-secondary-fixed">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-container text-secondary-fixed">
                         <span className="material-symbols-outlined">storefront</span>
                       </span>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="truncate font-label text-label-bold text-on-surface">
                         {m.merchants ? m.merchants.name : ""}
                       </p>
                       <p className="truncate font-body text-sm text-on-surface-variant">
                         {m.merchants && m.merchants.districts ? m.merchants.districts.name : ""}
+                        {m.merchants && m.merchants.address ? " / " + m.merchants.address : ""}
                       </p>
                     </div>
+                    {m.merchants && m.merchants.map_url ? (
+                      <a href={m.merchants.map_url} target="_blank" rel="noreferrer"
+                        aria-label="Open in Maps"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container text-primary hover:bg-surface-variant">
+                        <span className="material-symbols-outlined text-[20px]">map</span>
+                      </a>
+                    ) : null}
                   </div>
                 ))}
               </div>
