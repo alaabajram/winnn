@@ -9,7 +9,7 @@ export default async function VouchersPage() {
     sb.from("ticket_batches")
       .select("id,quantity,serial_from,serial_to,status,store_copies_received,created_at,campaigns(name,serial_prefix),merchants(name)")
       .order("created_at", { ascending: false }).limit(60),
-    sb.from("campaigns").select("id,name,type,status,serial_prefix,offline_serial_next,offline_serial_end")
+    sb.from("campaigns").select("id,name,type,status,serial_prefix,entry_prefix,offline_serial_next,offline_serial_end")
       .neq("type", "ONLINE").order("created_at", { ascending: false }),
     sb.from("merchants").select("id,name").eq("status", "ACTIVE").order("name"),
   ]);
