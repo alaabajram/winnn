@@ -7,7 +7,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 const MESSAGES: any = {
   ERR_BAD_LENGTH: "A ticket number is 16 digits. Check you have typed them all.",
   ERR_INVALID_TICKET: "That number is not valid. Check it against your ticket.",
-  ERR_TICKET_ALREADY_REDEEMED: "This ticket has already been entered.",
+  ERR_TICKET_ALREADY_REDEEMED: "ALREADY_ENTERED",
   ERR_TICKET_CANCELLED: "This ticket was cancelled.",
   ERR_TICKET_EXPIRED: "This ticket has expired.",
   ERR_CAMPAIGN_NOT_LIVE: "That draw is not open right now.",
@@ -27,6 +27,7 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<any>(null);
+  const [used, setUsed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -40,7 +41,13 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
     setBusy(false);
     if (res.error) {
       const k = Object.keys(MESSAGES).find((x) => res.error!.message.indexOf(x) > -1);
-      setErr(k ? MESSAGES[k] : "Something went wrong. Try again.");
+      const m = k ? MESSAGES[k] : "Something went wrong. Try again.";
+      if (m === "ALREADY_ENTERED") {
+        setUsed(true);
+        setErr(null);
+      } else {
+        setErr(m);
+      }
       return;
     }
     setOk(res.data);
@@ -102,7 +109,7 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
                 autoComplete="off"
                 placeholder="0000 0000 0000 0000"
                 value={value}
-                onChange={(e) => { setValue(group(e.target.value)); setErr(null); }}
+                onChange={(e) => { setValue(group(e.target.value)); setErr(null); setUsed(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter" && complete) submit(); }}
               />
 
@@ -120,6 +127,22 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
                 className="w-full rounded-xl bg-secondary-container py-4 font-label text-label-bold uppercase tracking-widest text-on-secondary-container disabled:opacity-40">
                 {busy ? "Checking" : "Enter my ticket"}
               </button>
+
+              {used ? (
+                <div className="flex items-start gap-3 rounded-xl bg-secondary-container p-4">
+                  <span className="material-symbols-outlined text-on-secondary-container">
+                    task_alt
+                  </span>
+                  <div>
+                    <p className="font-label text-label-bold text-on-secondary-container">
+                      Already entered
+                    </p>
+                    <p className="font-body text-body-md text-on-secondary-container">
+                      This ticket is in the drum twice already. Each number can only be entered once.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
 
               {err ? (
                 <p className="rounded-xl bg-error-container p-3 font-body text-body-md text-on-error-container">
