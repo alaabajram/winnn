@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { dateFmt } from "@/lib/format";
 import { artFor } from "@/lib/art";
-import VoucherEntry from "@/components/voucher-entry";
+import EntryNumber from "@/components/entry-number";
 
 export const dynamic = "force-dynamic";
 
@@ -143,7 +143,7 @@ export default async function MyTickets() {
       )}
 
       <div className="mt-8">
-        <VoucherEntry signedIn />
+        <EntryNumber signedIn />
       </div>
     </div>
   );
