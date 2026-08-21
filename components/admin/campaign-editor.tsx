@@ -17,7 +17,7 @@ function dtLocal(v: string | null) {
 
 export default function CampaignEditor(props: {
   campaign: any; prizes: any[]; selected: string[]; merchants: any[];
-  districts: any[]; products: any[]; tethered: any[];
+  districts: any[]; products: any[]; tethered: any[]; districtIds?: string[];
 }) {
   const c = props.campaign;
   const router = useRouter();
@@ -65,7 +65,7 @@ export default function CampaignEditor(props: {
   );
   const [selected, setSelected] = useState<string[]>(props.selected);
   const [nationwide, setNationwide] = useState<boolean>(c ? c.is_nationwide !== false : true);
-  const [districtId, setDistrictId] = useState<string>(c && c.district_id ? c.district_id : "");
+  const [districtIds, setDistrictIds] = useState<string[]>(props.districtIds || []);
   const [tether, setTether] = useState<any[]>(
     props.tethered && props.tethered.length
       ? props.tethered.map((t) => ({
@@ -128,9 +128,9 @@ export default function CampaignEditor(props: {
     await sb.rpc("fn_admin_set_campaign_merchants", {
       p_campaign_id: newId, p_merchant_ids: selected,
     });
-    await sb.rpc("fn_admin_set_campaign_area", {
+    await sb.rpc("fn_admin_set_campaign_districts", {
       p_campaign_id: newId,
-      p_district_id: districtId || null,
+      p_district_ids: districtIds,
       p_nationwide: nationwide,
     });
     await sb.rpc("fn_admin_set_campaign_products", {
@@ -440,14 +440,36 @@ export default function CampaignEditor(props: {
         </label>
 
         {!nationwide ? (
-          <Field label="District" hint="Only shown to customers in this district.">
-            <select className={FIELD} value={districtId} onChange={(e) => setDistrictId(e.target.value)}>
-              <option value="">Choose a district</option>
-              {props.districts.map((d) => (
-                <option key={d.id} value={d.id}>{d.governorate} / {d.name}</option>
-              ))}
-            </select>
-          </Field>
+          <>
+            <p className="mb-3 font-label text-label-bold text-on-surface-variant">
+              Districts ({districtIds.length} selected)
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {props.districts.map((d) => {
+                const on = districtIds.indexOf(d.id) > -1;
+                return (
+                  <label key={d.id}
+                    className={
+                      "flex cursor-pointer items-center gap-2 rounded-lg p-2.5 transition-colors " +
+                      (on
+                        ? "bg-secondary-container text-on-secondary-container"
+                        : "bg-surface-container text-on-surface hover:bg-surface-variant")
+                    }>
+                    <input type="checkbox" className="h-4 w-4" checked={on}
+                      onChange={(e) =>
+                        setDistrictIds(e.target.checked
+                          ? [...districtIds, d.id]
+                          : districtIds.filter((x) => x !== d.id))
+                      } />
+                    <span className="truncate font-body text-sm">{d.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-3 font-body text-sm text-on-surface-variant">
+              Shown to customers who have picked any of these districts.
+            </p>
+          </>
         ) : null}
       </Section>
 
