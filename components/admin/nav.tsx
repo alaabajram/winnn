@@ -21,7 +21,7 @@ const GROUPS = [
       { href: "/admin/store", label: "Products", icon: "shopping_bag" },
       { href: "/admin/merchants", label: "Merchants", icon: "storefront" },
       { href: "/admin/customers", label: "Customers", icon: "group" },
-      { href: "/admin/receipts", label: "Receipts", icon: "receipt_long" },
+      { href: "/admin/crm", label: "CRM", icon: "campaign" },
     ],
   },
   {
