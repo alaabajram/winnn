@@ -22,6 +22,7 @@ export default async function CampaignEditPage(props: any) {
         districts={(districts as any[]) || []}
         products={(products as any[]) || []}
         tethered={[]}
+        districtIds={[]}
       />
     );
   }
@@ -33,6 +34,9 @@ export default async function CampaignEditPage(props: any) {
     sb.from("campaign_products").select("product_id,tickets_per_unit,is_primary").eq("campaign_id", id).order("sort_order"),
   ]);
 
+  const { data: cd } = await sb
+    .from("campaign_districts").select("district_id").eq("campaign_id", id);
+
   return (
     <CampaignEditor
       campaign={(campaign as any) || null}
@@ -42,6 +46,7 @@ export default async function CampaignEditPage(props: any) {
       districts={(districts as any[]) || []}
       products={(products as any[]) || []}
       tethered={(cp as any[]) || []}
+      districtIds={((cd as any[]) || []).map((x) => x.district_id)}
     />
   );
 }
