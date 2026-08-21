@@ -11,7 +11,7 @@ export default async function DrawsPage() {
       .in("status", ["LIVE", "PAUSED", "SALES_CLOSED", "DRAWN", "COMPLETED"])
       .order("draw_date", { ascending: true }),
     sb.from("draws")
-      .select("id,campaign_id,status,pool_online_count,pool_offline_count,pool_total_count,store_copies_received,youtube_video_id,sales_closed_at,published_at,draw_winners(position,claim_status,tickets(serial,source)),draw_pulls(attempt_no,prize_position,serial_entered,result,reason,pulled_at)")
+      .select("id,campaign_id,status,pool_online_count,pool_offline_count,pool_registered_count,pool_total_count,store_copies_received,youtube_video_id,sales_closed_at,published_at,draw_winners(position,claim_status,tickets(serial,source)),draw_pulls(attempt_no,prize_position,serial_entered,result,reason,pulled_at)")
       .order("sales_closed_at", { ascending: false }),
   ]);
   return <DrawsClient campaigns={(campaigns as any[]) || []} draws={(draws as any[]) || []} />;
