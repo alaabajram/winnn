@@ -18,7 +18,7 @@ export default function OrdersClient(props: { initial: any[] }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
-  const [tab, setTab] = useState<"awaiting" | "paid" | "all">("awaiting");
+  const [tab, setTab] = useState<"awaiting" | "tofulfil" | "paid" | "all">("awaiting");
   const router = useRouter();
 
   async function reload() {
@@ -55,6 +55,30 @@ export default function OrdersClient(props: { initial: any[] }) {
     }
   }
 
+  async function setFulfilment(id: string, status: string) {
+    const note = status === "SHIPPED"
+      ? window.prompt("Courier or tracking note (optional)") || ""
+      : "";
+    setBusy(true);
+    setMsg(null);
+    const res = await supabaseBrowser().rpc("fn_admin_set_fulfilment", {
+      p_order_id: id, p_status: status, p_note: note || null,
+    });
+    setBusy(false);
+    if (res.error) {
+      setMsg({
+        kind: "error",
+        text: res.error.message.indexOf("ERR_NOT_PAID") > -1
+          ? "Confirm payment before moving this order."
+          : cleanError(res.error.message),
+      });
+      return;
+    }
+    setMsg({ kind: "ok", text: "Order marked " + status.toLowerCase() + "." });
+    if (open && open.id === id) setOpen({ ...open, status });
+    reload();
+  }
+
   async function cancel(id: string) {
     const reason = window.prompt("Why is this order being cancelled?");
     if (!reason) return;
@@ -72,7 +96,9 @@ export default function OrdersClient(props: { initial: any[] }) {
   const filtered = rows.filter((r) =>
     tab === "all" ? true
     : tab === "paid" ? r.payment_state === "PAID"
-    : r.payment_state === "AWAITING_PAYMENT"
+    : tab === "tofulfil"
+      ? r.payment_state === "PAID" && r.status !== "COMPLETED" && r.status !== "CANCELLED"
+      : r.payment_state === "AWAITING_PAYMENT"
   );
 
   const awaiting = rows.filter((r) => r.payment_state === "AWAITING_PAYMENT");
@@ -155,6 +181,61 @@ export default function OrdersClient(props: { initial: any[] }) {
               <p className="num font-body text-body-md text-on-surface-variant">{open.mobile || sh.phone}</p>
             </Card>
 
+            {open.payment_state === "PAID" ? (
+              <Card title="Fulfilment">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {["CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED"].map((st, i) => {
+                    const order = ["CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED"];
+                    const at = order.indexOf(open.status);
+                    const done = at >= i;
+                    return (
+                      <span key={st}
+                        className={
+                          "flex items-center gap-1.5 rounded-full px-3 py-1.5 font-label text-[10px] font-semibold uppercase tracking-widest " +
+                          (done
+                            ? "bg-tertiary-fixed/40 text-on-tertiary-fixed"
+                            : "bg-surface-container text-on-surface-variant")
+                        }>
+                        <span className="material-symbols-outlined text-[14px]">
+                          {done ? "check_circle" : "radio_button_unchecked"}
+                        </span>
+                        {st === "COMPLETED" ? "Delivered" : st.toLowerCase()}
+                      </span>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {open.status === "CONFIRMED" ? (
+                    <Btn onClick={() => setFulfilment(open.id, "PROCESSING")} disabled={busy}>
+                      Start processing
+                    </Btn>
+                  ) : null}
+                  {open.status === "PROCESSING" ? (
+                    <Btn onClick={() => setFulfilment(open.id, "SHIPPED")} disabled={busy}>
+                      Mark shipped
+                    </Btn>
+                  ) : null}
+                  {open.status === "SHIPPED" ? (
+                    <Btn onClick={() => setFulfilment(open.id, "COMPLETED")} disabled={busy}>
+                      Mark delivered
+                    </Btn>
+                  ) : null}
+                  {open.status === "COMPLETED" ? (
+                    <p className="rounded-xl bg-tertiary-fixed/20 p-4 font-body text-body-md text-on-tertiary-fixed">
+                      Delivered{open.delivered_at ? " " + dateFmt(open.delivered_at) : ""}.
+                    </p>
+                  ) : null}
+                </div>
+
+                {open.tracking_note ? (
+                  <p className="mt-3 rounded-xl bg-surface-container p-3 font-body text-sm text-on-surface-variant">
+                    {open.tracking_note}
+                  </p>
+                ) : null}
+              </Card>
+            ) : null}
+
             {open.payment_state === "AWAITING_PAYMENT" ? (
               <Card title="Confirm payment">
                 <p className="mb-4 font-body text-body-md text-on-surface-variant">
@@ -221,13 +302,13 @@ export default function OrdersClient(props: { initial: any[] }) {
       </div>
 
       <div className="flex gap-2 rounded-xl bg-surface-container p-1">
-        {(["awaiting", "paid", "all"] as const).map((t) => (
+        {(["awaiting", "tofulfil", "paid", "all"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={
               "flex-1 rounded-lg py-2.5 font-label text-label-bold capitalize transition-colors " +
               (tab === t ? "bg-surface-container-lowest text-on-surface shadow-sm" : "text-on-surface-variant")
             }>
-            {t}
+            {t === "tofulfil" ? "to fulfil" : t}
           </button>
         ))}
       </div>
@@ -237,7 +318,7 @@ export default function OrdersClient(props: { initial: any[] }) {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-outline-variant/30">
-                {["Order", "Customer", "Total", "Tickets", "Status", "Placed", ""].map((h) => (
+                {["Order", "Customer", "Total", "Tickets", "Payment", "Fulfilment", "Placed", ""].map((h) => (
                   <th key={h} className="pb-3 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{h}</th>
                 ))}
               </tr>
@@ -260,6 +341,15 @@ export default function OrdersClient(props: { initial: any[] }) {
                     <Pill tone={TONE[r.payment_state]}>
                       {r.payment_state === "AWAITING_PAYMENT" ? "Awaiting" : r.payment_state}
                     </Pill>
+                  </td>
+                  <td className="py-4">
+                    {r.payment_state === "PAID" ? (
+                      <Pill tone={r.status === "COMPLETED"
+                        ? "bg-tertiary-fixed/40 text-on-tertiary-fixed"
+                        : "bg-surface-container text-on-surface-variant"}>
+                        {r.status === "COMPLETED" ? "Delivered" : r.status}
+                      </Pill>
+                    ) : null}
                   </td>
                   <td className="num py-4 font-body text-sm text-on-surface-variant">
                     {dateFmt(r.created_at)}
