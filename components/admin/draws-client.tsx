@@ -44,6 +44,35 @@ export default function DrawsClient(props: { campaigns: any[]; draws: any[] }) {
     return res.data;
   }
 
+  async function exportPrintList() {
+    if (!campaign) return;
+    setBusy(true);
+    setMsg(null);
+    const res = await supabaseBrowser().rpc("fn_admin_draw_print_list", {
+      p_campaign_id: campaign.id,
+    });
+    setBusy(false);
+    if (res.error) { setMsg({ kind: "error", text: cleanError(res.error.message) }); return; }
+    const rows: any[] = (res.data as any[]) || [];
+    if (!rows.length) {
+      setMsg({ kind: "error", text: "Nothing to print yet." });
+      return;
+    }
+    const esc = (v: any) => '"' + String(v === null || v === undefined ? "" : v).replace(/"/g, '""') + '"';
+    const csv = ["serial,type,customer,email,merchant"]
+      .concat(rows.map((r) =>
+        [r.serial, r.copy_label, r.customer_name, r.customer_email, r.merchant].map(esc).join(",")))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "drum-print-" + campaign.serial_prefix + ".csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    setMsg({ kind: "ok", text: rows.length + " slips exported for printing." });
+  }
+
   async function recordPull() {
     const d: any = await call(
       "fn_record_draw_pull",
@@ -95,7 +124,7 @@ export default function DrawsClient(props: { campaigns: any[]; draws: any[] }) {
               { l: "Status", v: campaign.status },
               { l: "Draw date", v: dateFmt(campaign.draw_date) },
               { l: "In drum", v: draw ? draw.pool_total_count : "-" },
-              { l: "Store copies", v: draw ? draw.store_copies_received : "-" },
+              { l: "Doubled", v: draw ? draw.pool_registered_count : "-" },
             ].map((k) => (
               <div key={k.l} className="rounded-2xl bg-surface-container-lowest p-5 shadow-sm">
                 <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{k.l}</p>
@@ -127,7 +156,24 @@ export default function DrawsClient(props: { campaigns: any[]; draws: any[] }) {
           </Card>
 
           {draw ? (
-            <Card title="Step 2 - Record each physical pull">
+            <Card title="Step 2 - Print the slips for the drum">
+              <p className="mb-5 font-body text-body-md text-on-surface-variant">
+                Two kinds of slip still need printing: tickets bought online, and the extra slip
+                earned by anyone who entered a shop ticket number. Store copies are already physical
+                and are not in this list.
+              </p>
+              <Btn onClick={exportPrintList} disabled={busy}>
+                {busy ? "Building" : "Export print list"}
+              </Btn>
+              <p className="mt-4 font-body text-sm text-on-surface-variant">
+                Each row carries the serial and the customer name, so a drawn slip can be matched to
+                a person without a lookup.
+              </p>
+            </Card>
+          ) : null}
+
+          {draw ? (
+          <Card title="Step 3 - Record each physical pull">
               <div className="mb-5 rounded-xl bg-secondary-container/30 p-4">
                 <p className="font-body text-body-md text-on-surface">
                   Read the serial from the slip drawn out of the drum and enter it exactly. Invalid
@@ -179,7 +225,7 @@ export default function DrawsClient(props: { campaigns: any[]; draws: any[] }) {
           ) : null}
 
           {draw && winners.length ? (
-            <Card title="Step 3 - Confirm and publish">
+            <Card title="Step 4 - Confirm and publish">
               <div className="mb-6 space-y-3">
                 {winners.map((w) => {
                   const prize = prizes.find((p) => p.position === w.position);
