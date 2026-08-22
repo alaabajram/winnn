@@ -2,22 +2,24 @@
 import { VOUCHER, numberGroups, splitTitle, prizeAmount, type VoucherDesign } from "@/lib/voucher";
 
 /**
- * The voucher, rendered in real millimetres so preview and print are the
- * same component. Everything except the fixed labels is pulled from the
- * campaign, merchant and ticket - nothing is typed twice.
+ * The voucher at real millimetre size, so preview and print are identical.
+ *
+ * At 210 x 74 the customer half runs as two columns - branding left, prize
+ * and number right - because a single vertical stack cannot fit 74mm
+ * without shrinking the ticket number, which has to stay readable across a
+ * shop counter.
  */
 
 function Confetti(props: { accent: string; scale: number }) {
   const s = props.scale;
   const bits = [
-    { x: 12, y: 14, r: -20, w: 3.2, h: 4.4, c: "#3b82f6" },
-    { x: 22, y: 8, r: 35, w: 2.6, h: 3.6, c: props.accent },
-    { x: 34, y: 18, r: -10, w: 2.2, h: 3.0, c: "#60a5fa" },
-    { x: 78, y: 10, r: 25, w: 3.0, h: 4.0, c: props.accent },
-    { x: 88, y: 22, r: -30, w: 2.4, h: 3.4, c: "#3b82f6" },
-    { x: 8, y: 40, r: 15, w: 2.0, h: 2.8, c: props.accent },
-    { x: 92, y: 46, r: -18, w: 2.6, h: 3.6, c: "#60a5fa" },
-    { x: 16, y: 62, r: 40, w: 2.2, h: 3.0, c: props.accent },
+    { x: 6, y: 12, r: -20, w: 2.6, h: 3.6, c: "#3b82f6" },
+    { x: 30, y: 6, r: 35, w: 2.2, h: 3.0, c: props.accent },
+    { x: 52, y: 10, r: -12, w: 2.0, h: 2.8, c: "#60a5fa" },
+    { x: 70, y: 5, r: 25, w: 2.4, h: 3.2, c: props.accent },
+    { x: 4, y: 62, r: 18, w: 2.2, h: 3.0, c: props.accent },
+    { x: 46, y: 76, r: -28, w: 2.0, h: 2.8, c: "#3b82f6" },
+    { x: 66, y: 70, r: 40, w: 2.2, h: 3.0, c: "#60a5fa" },
   ];
   return (
     <>
@@ -27,7 +29,7 @@ function Confetti(props: { accent: string; scale: number }) {
             position: "absolute", left: b.x + "%", top: b.y + "%",
             width: b.w * s + "mm", height: b.h * s + "mm",
             background: b.c, transform: "rotate(" + b.r + "deg)",
-            borderRadius: 0.4 * s + "mm", opacity: 0.85,
+            borderRadius: 0.3 * s + "mm", opacity: 0.8,
           }} />
       ))}
     </>
@@ -64,16 +66,32 @@ export function VoucherFront(props: {
   const amount = prizeAmount(props.prize, props.prizeValueCents);
   const groups = numberGroups(props.entryNumber);
 
-  const Line = (label: string, icon: string) => (
-    <div style={{ marginBottom: mm(4) }}>
-      <div className="flex items-center" style={{ gap: mm(1.4) }}>
+  /** Label above a write-in rule. */
+  const WriteIn = (label: string, icon: string) => (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div className="flex items-center" style={{ gap: mm(1.2) }}>
         <span className="material-symbols-outlined"
-          style={{ fontSize: mm(3.4), color: d.stubInk, opacity: 0.75 }}>{icon}</span>
-        <span style={{ fontSize: mm(2.5), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.75 }}>
+          style={{ fontSize: mm(2.8), opacity: 0.7 }}>{icon}</span>
+        <span style={{ fontSize: mm(2.1), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.7 }}>
           {label}
         </span>
       </div>
-      <div style={{ borderBottom: "1px dashed rgba(0,0,0,0.28)", marginTop: mm(3.2) }} />
+      <div style={{ borderBottom: "1px dashed rgba(0,0,0,0.3)", marginTop: mm(2.4) }} />
+    </div>
+  );
+
+  const Value = (label: string, icon: string, value: string) => (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div className="flex items-center" style={{ gap: mm(1.2) }}>
+        <span className="material-symbols-outlined"
+          style={{ fontSize: mm(2.8), opacity: 0.7 }}>{icon}</span>
+        <span style={{ fontSize: mm(2.1), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.7 }}>
+          {label}
+        </span>
+      </div>
+      <p style={{ fontSize: mm(3.1), fontWeight: 700, marginTop: mm(0.8), fontFamily: "monospace" }}>
+        {value}
+      </p>
     </div>
   );
 
@@ -81,71 +99,66 @@ export function VoucherFront(props: {
     <div className="voucher relative flex"
       style={{ width: mm(VOUCHER.widthMm), height: mm(VOUCHER.heightMm), background: "#ffffff" }}>
 
-      {/* ---------- SHOP COPY ---------- */}
+      {/* ---------- SHOP ENTRY ---------- */}
       <div className="relative flex flex-col"
         style={{
           width: mm(VOUCHER.stubMm), background: d.stubBg, color: d.stubInk,
-          padding: mm(6), borderRight: "1px dashed rgba(0,0,0,0.3)",
+          padding: mm(4.5), borderRight: "1px dashed rgba(0,0,0,0.32)",
         }}>
-        <div className="flex items-center justify-center" style={{ gap: mm(1.5) }}>
-          <Star size={mm(3.4)} color={d.accent} />
-          <span style={{ fontSize: mm(3.6), fontWeight: 800, letterSpacing: "0.08em" }}>
+        <div className="flex items-center justify-center" style={{ gap: mm(1.2) }}>
+          <Star size={mm(2.8)} color={d.accent} />
+          <span style={{ fontSize: mm(3), fontWeight: 800, letterSpacing: "0.08em" }}>
             {d.stubTitle}
           </span>
-          <Star size={mm(3.4)} color={d.accent} />
+          <Star size={mm(2.8)} color={d.accent} />
         </div>
 
-        <p style={{ fontSize: mm(4.6), fontWeight: 800, lineHeight: 1.15, marginTop: mm(2.5) }}>
+        <p style={{
+          fontSize: mm(3.6), fontWeight: 800, lineHeight: 1.15,
+          marginTop: mm(1.6), textAlign: "center",
+        }}>
           {props.campaign}
         </p>
 
-        <div style={{ marginTop: mm(5), flex: 1 }}>
+        {/* Fills the remaining height so there is no dead white space. */}
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column",
+          gap: mm(1.5), marginTop: mm(2.5),
+        }}>
           {d.showWriteIn ? (
             <>
-              {Line("NAME", "person")}
-              {Line("MOBILE", "call")}
+              {WriteIn("NAME", "person")}
+              {WriteIn("MOBILE", "call")}
             </>
           ) : null}
-
-          <div style={{ marginBottom: mm(3.5) }}>
-            <div className="flex items-center" style={{ gap: mm(1.4) }}>
-              <span className="material-symbols-outlined"
-                style={{ fontSize: mm(3.4), opacity: 0.75 }}>confirmation_number</span>
-              <span style={{ fontSize: mm(2.5), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.75 }}>
-                SERIAL NUMBER
-              </span>
-            </div>
-            <p style={{ fontSize: mm(3.6), fontWeight: 700, marginTop: mm(1.2), fontFamily: "monospace" }}>
-              {props.serial}
-            </p>
-          </div>
-
+          {Value("SERIAL", "confirmation_number", props.serial)}
           {props.merchant ? (
-            <div>
-              <div className="flex items-center" style={{ gap: mm(1.4) }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+              <div className="flex items-center" style={{ gap: mm(1.2) }}>
                 <span className="material-symbols-outlined"
-                  style={{ fontSize: mm(3.4), opacity: 0.75 }}>storefront</span>
-                <span style={{ fontSize: mm(2.5), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.75 }}>
+                  style={{ fontSize: mm(2.8), opacity: 0.7 }}>storefront</span>
+                <span style={{ fontSize: mm(2.1), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.7 }}>
                   MERCHANT
                 </span>
               </div>
-              <p style={{ fontSize: mm(3.4), fontWeight: 700, marginTop: mm(1.2) }}>
+              <p style={{ fontSize: mm(2.9), fontWeight: 700, marginTop: mm(0.8) }}>
                 {props.merchant}
               </p>
             </div>
           ) : null}
         </div>
 
-        <div className="flex items-center" style={{ gap: mm(2.5) }}>
-          {d.showLogo && props.logo ? (
-            <img src={props.logo} alt="" style={{ height: mm(8), width: "auto" }} />
-          ) : null}
-          <div style={{ borderLeft: "1px solid rgba(0,0,0,0.2)", paddingLeft: mm(2.5) }}>
-            <p style={{ fontSize: mm(2.6), fontWeight: 800, lineHeight: 1.3 }}>
+        {d.showLogo && props.logo ? (
+          <div className="flex items-center" style={{ gap: mm(2), marginTop: mm(2) }}>
+            <img src={props.logo} alt="" style={{ height: mm(9), width: "auto" }} />
+            <span style={{
+              fontSize: mm(2.2), fontWeight: 800, lineHeight: 1.25,
+              borderLeft: "1px solid rgba(0,0,0,0.2)", paddingLeft: mm(2),
+            }}>
               {d.tagline.split(" ").map((w, i) => <span key={i} style={{ display: "block" }}>{w}</span>)}
-            </p>
+            </span>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {/* ---------- CUSTOMER COPY ---------- */}
@@ -156,104 +169,41 @@ export function VoucherFront(props: {
         ) : null}
         {d.showConfetti ? <Confetti accent={d.accent} scale={s} /> : null}
 
-        <div className="relative flex flex-1 flex-col items-center"
-          style={{ padding: mm(5), paddingRight: mm(2) }}>
-
+        {/* Left: brand and campaign */}
+        <div className="relative flex flex-col"
+          style={{ width: mm(62), padding: mm(4), paddingRight: mm(2) }}>
           {d.showLogo && props.logo ? (
-            <img src={props.logo} alt="" style={{ height: mm(11), width: "auto" }} />
+            <img src={props.logo} alt="" style={{ height: mm(13), width: "auto", alignSelf: "flex-start" }} />
           ) : null}
           <p style={{
-            fontSize: mm(2.7), fontWeight: 800, letterSpacing: "0.18em",
-            marginTop: mm(1.2), opacity: 0.9,
+            fontSize: mm(2.4), fontWeight: 800, letterSpacing: "0.2em",
+            marginTop: mm(1), opacity: 0.9,
           }}>
             {d.tagline}
           </p>
 
-          <p style={{
-            fontSize: mm(9), fontWeight: 900, lineHeight: 0.98, marginTop: mm(2),
-            letterSpacing: "-0.01em", textAlign: "center",
-          }}>
+          <p style={{ fontSize: mm(6.4), fontWeight: 900, lineHeight: 1.0, marginTop: mm(1.8) }}>
             {l1}
           </p>
           {l2 ? (
-            <p style={{
-              fontSize: mm(9), fontWeight: 900, lineHeight: 0.98, color: d.accent,
-              letterSpacing: "-0.01em", textAlign: "center",
-            }}>
+            <p style={{ fontSize: mm(6.4), fontWeight: 900, lineHeight: 1.0, color: d.accent }}>
               {l2}
             </p>
           ) : null}
 
-          {amount ? (
-            <>
-              <span style={{
-                background: d.bg, border: "1px solid rgba(255,255,255,0.25)",
-                borderRadius: mm(2), padding: mm(0.8) + " " + mm(3),
-                fontSize: mm(2.6), fontWeight: 800, letterSpacing: "0.12em",
-                marginTop: mm(2.5),
-              }}>
-                {d.prizeLabel}
-              </span>
-
-              <div style={{
-                background: "linear-gradient(180deg," + d.accent + " 0%," + d.accentDeep + " 100%)",
-                color: d.bg, borderRadius: mm(2.5), padding: mm(1.5) + " " + mm(5),
-                marginTop: mm(1.5), textAlign: "center", minWidth: mm(62),
-              }}>
-                <div className="flex items-center justify-between" style={{ gap: mm(3) }}>
-                  <span style={{ fontSize: mm(2.9), fontWeight: 800, letterSpacing: "0.06em" }}>
-                    {d.prizePrefix}
-                  </span>
-                  <span style={{ fontSize: mm(2.9), fontWeight: 800, letterSpacing: "0.06em" }}>
-                    {d.prizeSuffix}
-                  </span>
-                </div>
-                <p style={{ fontSize: mm(11), fontWeight: 900, lineHeight: 1, marginTop: mm(0.5) }}>
-                  {amount}
-                </p>
-              </div>
-            </>
-          ) : null}
-
-          <div className="flex w-full items-center" style={{ gap: mm(2), marginTop: mm(3) }}>
-            <span style={{ flex: 1, borderTop: "1px solid rgba(255,255,255,0.3)" }} />
-            <span style={{ fontSize: mm(2.7), fontWeight: 800, letterSpacing: "0.14em" }}>
-              {d.entryLabel}
-            </span>
-            <span style={{ flex: 1, borderTop: "1px solid rgba(255,255,255,0.3)" }} />
-          </div>
-
-          <div className="flex" style={{ gap: mm(3), marginTop: mm(1.5) }}>
-            {groups.map((g, i) => (
-              <span key={i} style={{
-                fontSize: mm(7.5), fontWeight: 900, color: d.accent,
-                fontFamily: "monospace", letterSpacing: "0.02em",
-              }}>
-                {g}
-              </span>
-            ))}
-          </div>
-
-          <p style={{ fontSize: mm(2.8), marginTop: mm(1.5), textAlign: "center" }}>
-            {d.ctaBefore}{" "}
-            <span style={{ color: d.accent, fontWeight: 800 }}>{d.ctaEmphasis}</span>{" "}
-            {d.ctaAfter}
-          </p>
-
           {d.showPartner && props.merchant ? (
             <div style={{
-              background: "#ffffff", color: d.stubInk, borderRadius: mm(2),
-              padding: mm(2) + " " + mm(4), marginTop: "auto", textAlign: "center",
-              minWidth: mm(60),
+              background: "#ffffff", color: d.stubInk, borderRadius: mm(1.6),
+              padding: mm(1.4) + " " + mm(2.5), marginTop: "auto", textAlign: "center",
             }}>
-              <p style={{ fontSize: mm(2.3), fontWeight: 700, letterSpacing: "0.12em", opacity: 0.7 }}>
+              <p style={{ fontSize: mm(1.9), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.7 }}>
                 {d.partnerLabel}
               </p>
               {props.merchantLogo ? (
                 <img src={props.merchantLogo} alt=""
-                  style={{ height: mm(9), margin: mm(1) + " auto 0", objectFit: "contain" }} />
+                  style={{ height: mm(6.5), margin: mm(0.6) + " auto 0", objectFit: "contain" }} />
               ) : (
-                <p style={{ fontSize: mm(4), fontWeight: 800, marginTop: mm(0.8) }}>
+                <p style={{ fontSize: mm(2.9), fontWeight: 800, marginTop: mm(0.4) }}>
                   {props.merchant}
                 </p>
               )}
@@ -261,32 +211,85 @@ export function VoucherFront(props: {
           ) : null}
         </div>
 
-        {/* QR column */}
+        {/* Right: prize and number */}
+        <div className="relative flex flex-1 flex-col justify-center"
+          style={{ padding: mm(4), paddingLeft: mm(1) }}>
+
+          {amount ? (
+            <>
+              <span style={{
+                alignSelf: "flex-start",
+                border: "1px solid rgba(255,255,255,0.3)", borderRadius: mm(1.4),
+                padding: mm(0.5) + " " + mm(2.2),
+                fontSize: mm(2.2), fontWeight: 800, letterSpacing: "0.14em",
+              }}>
+                {d.prizeLabel}
+              </span>
+
+              <div style={{
+                background: "linear-gradient(180deg," + d.accent + " 0%," + d.accentDeep + " 100%)",
+                color: d.bg, borderRadius: mm(1.8), padding: mm(1.4) + " " + mm(3),
+                marginTop: mm(1.2), textAlign: "center",
+              }}>
+                <p style={{ fontSize: mm(2.3), fontWeight: 800, letterSpacing: "0.12em" }}>
+                  {d.prizePrefix}{d.prizeSuffix ? " " + d.prizeSuffix : ""}
+                </p>
+                <p style={{ fontSize: mm(9.5), fontWeight: 900, lineHeight: 1, marginTop: mm(0.2) }}>
+                  {amount}
+                </p>
+              </div>
+            </>
+          ) : null}
+
+          <div className="flex items-center" style={{ gap: mm(1.5), marginTop: mm(2.4) }}>
+            <span style={{ flex: 1, borderTop: "1px solid rgba(255,255,255,0.28)" }} />
+            <span style={{ fontSize: mm(2.2), fontWeight: 800, letterSpacing: "0.12em" }}>
+              {d.entryLabel}
+            </span>
+            <span style={{ flex: 1, borderTop: "1px solid rgba(255,255,255,0.28)" }} />
+          </div>
+
+          <div className="flex justify-center" style={{ gap: mm(2.2), marginTop: mm(1) }}>
+            {groups.map((g, i) => (
+              <span key={i} style={{
+                fontSize: mm(6.2), fontWeight: 900, color: d.accent,
+                fontFamily: "monospace", letterSpacing: "0.01em",
+              }}>
+                {g}
+              </span>
+            ))}
+          </div>
+
+          <p style={{ fontSize: mm(2.2), marginTop: mm(1), textAlign: "center" }}>
+            {d.ctaBefore}{" "}
+            <span style={{ color: d.accent, fontWeight: 800 }}>{d.ctaEmphasis}</span>{" "}
+            {d.ctaAfter}
+          </p>
+        </div>
+
+        {/* QR column - fixed width so it can never overflow */}
         {d.showQr ? (
           <div className="relative flex flex-col items-center justify-center"
-            style={{
-              width: mm(34), borderLeft: "1px solid " + d.accent,
-              padding: mm(3),
-            }}>
+            style={{ width: mm(VOUCHER.qrMm), padding: mm(2.5), flexShrink: 0 }}>
             {props.qrSvg ? (
               <div style={{
-                width: mm(26), height: mm(26), background: "#fff",
-                padding: mm(1.5), borderRadius: mm(2),
+                width: mm(23), height: mm(23), background: "#fff",
+                padding: mm(1.2), borderRadius: mm(1.6),
               }} dangerouslySetInnerHTML={{ __html: props.qrSvg }} />
             ) : (
               <div style={{
-                width: mm(26), height: mm(26), background: "rgba(255,255,255,0.15)",
-                borderRadius: mm(2),
+                width: mm(23), height: mm(23), background: "rgba(255,255,255,0.15)",
+                borderRadius: mm(1.6),
               }} />
             )}
             <p style={{
-              fontSize: mm(3), fontWeight: 800, letterSpacing: "0.08em",
-              marginTop: mm(2), textAlign: "center", lineHeight: 1.25,
+              fontSize: mm(2.3), fontWeight: 800, letterSpacing: "0.06em",
+              marginTop: mm(1.4), textAlign: "center", lineHeight: 1.2,
             }}>
               {d.qrLabel}
             </p>
             {props.drawDate ? (
-              <p style={{ fontSize: mm(2.3), marginTop: mm(1.5), opacity: 0.75, textAlign: "center" }}>
+              <p style={{ fontSize: mm(1.9), marginTop: mm(0.8), opacity: 0.7, textAlign: "center" }}>
                 Draw {props.drawDate}
               </p>
             ) : null}
@@ -306,7 +309,7 @@ export function VoucherBack(props: { d: VoucherDesign; site?: string; scale?: nu
     <div className="voucher relative overflow-hidden"
       style={{
         width: mm(VOUCHER.widthMm), height: mm(VOUCHER.heightMm),
-        background: d.stubBg, color: d.stubInk, padding: mm(10),
+        background: d.stubBg, color: d.stubInk, padding: mm(7),
       }}>
       {d.backImage ? (
         <img src={d.backImage} alt=""
@@ -314,12 +317,12 @@ export function VoucherBack(props: { d: VoucherDesign; site?: string; scale?: nu
       ) : null}
 
       <div className="relative">
-        <p style={{ fontSize: mm(6), fontWeight: 900, color: d.bg }}>{d.backTitle}</p>
-        <p style={{ fontSize: mm(3.2), lineHeight: 1.6, marginTop: mm(3), whiteSpace: "pre-line" }}>
+        <p style={{ fontSize: mm(4.4), fontWeight: 900, color: d.bg }}>{d.backTitle}</p>
+        <p style={{ fontSize: mm(2.5), lineHeight: 1.5, marginTop: mm(2), whiteSpace: "pre-line" }}>
           {d.backBody}
         </p>
         {props.site ? (
-          <p style={{ fontSize: mm(4), fontWeight: 800, marginTop: mm(4), color: d.bg }}>
+          <p style={{ fontSize: mm(3.2), fontWeight: 800, marginTop: mm(2.5), color: d.bg }}>
             {props.site}
           </p>
         ) : null}
