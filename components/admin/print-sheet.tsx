@@ -85,8 +85,9 @@ export default function PrintSheet(props: { data: any }) {
               d={design}
               campaign={d.campaign.name}
               prize={d.prize ? d.prize.title : null}
-              prizeImage={d.prize ? d.prize.image_url : null}
+              prizeValueCents={d.prize ? d.prize.value_cents : null}
               merchant={d.merchant ? d.merchant.name : null}
+              merchantLogo={d.merchant ? d.merchant.logo_url : null}
               logo={d.settings ? d.settings.logo_url : null}
               serial={t.serial}
               entryNumber={t.entry_number}
