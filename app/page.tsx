@@ -11,6 +11,16 @@ import JsonLd from "@/components/json-ld";
 
 export const dynamic = "force-dynamic";
 
+/** Nationwide, one district by name, or "N areas" when it spans several. */
+function areaLabel(c: any) {
+  if (c.is_nationwide) return "All Lebanon";
+  const list: any[] = (c.campaign_districts as any[]) || [];
+  if (list.length > 1) return list.length + " areas";
+  if (list.length === 1 && list[0].districts) return list[0].districts.name;
+  if (c.districts) return c.districts.name;
+  return "Local";
+}
+
 export default async function Deals(props: any) {
   const search = await props.searchParams;
   const districtSlug = search && search.d ? String(search.d) : "";
@@ -24,11 +34,19 @@ export default async function Deals(props: any) {
 
   let q = sb
     .from("campaigns")
-    .select("id,name,slug,description,type,draw_date,sales_close_at,hero_image_url,thumbnail_url,is_nationwide,district_id,districts(name),campaign_prizes(position,title,value_cents),campaign_products(tickets_per_unit,is_primary,products(id,name,slug,price_cents,stock,images,status))")
+    .select("id,name,slug,description,type,draw_date,sales_close_at,hero_image_url,thumbnail_url,is_nationwide,district_id,districts!campaigns_district_id_fkey(name),campaign_districts(districts(name)),campaign_prizes(position,title,value_cents),campaign_products(tickets_per_unit,is_primary,products(id,name,slug,price_cents,stock,images,status))")
     .eq("status", "LIVE")
     .order("draw_date", { ascending: true });
 
-  if (active) q = q.or("is_nationwide.eq.true,district_id.eq." + active.id);
+  // A campaign matches if it is nationwide, or listed in this district.
+  if (active) {
+    const { data: inDistrict } = await sb
+      .from("campaign_districts").select("campaign_id").eq("district_id", active.id);
+    const ids = ((inDistrict as any[]) || []).map((x) => x.campaign_id);
+    q = ids.length
+      ? q.or("is_nationwide.eq.true,id.in.(" + ids.join(",") + ")")
+      : q.eq("is_nationwide", true);
+  }
 
   const { data: liveRows } = await q;
   const live: any[] = (liveRows as any[]) || [];
@@ -124,9 +142,7 @@ export default async function Deals(props: any) {
                   ? prize.title.split("-").slice(1).join("-").trim() || prize.title
                   : null,
                 drawDate: dateFmt(c.draw_date),
-                areaLabel: c.is_nationwide
-                  ? "All Lebanon"
-                  : c.districts ? c.districts.name : "Local",
+                areaLabel: areaLabel(c),
                 ends: endsLabel(c.sales_close_at),
               }}
               product={
