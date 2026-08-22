@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 const MESSAGES: any = {
   ERR_BAD_LENGTH: "A ticket number is 16 digits. Check you have typed them all.",
-  ERR_INVALID_TICKET: "That number is not valid. Check it against your ticket.",
+  ERR_INVALID_TICKET: "That number is not valid. Check it against your paper ticket.",
+  ERR_NOT_A_VOUCHER: "ONLINE_TICKET",
   ERR_TICKET_ALREADY_REDEEMED: "ALREADY_ENTERED",
   ERR_TICKET_CANCELLED: "This ticket was cancelled.",
   ERR_TICKET_EXPIRED: "This ticket has expired.",
@@ -30,6 +31,24 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
   const [used, setUsed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const params = useSearchParams();
+
+  // The QR on a printed voucher links to /?entry=NUMBER. Prefill and scroll
+  // into view so a scan is one tap, not a retype.
+  useEffect(() => {
+    const e = params.get("entry");
+    if (!e) return;
+    const digits = e.replace(/[^0-9]/g, "").slice(0, 16);
+    if (digits.length !== 16) return;
+    setValue(group(digits));
+    window.setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        inputRef.current.focus();
+      }
+    }, 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const digits = value.replace(/[^0-9]/g, "");
   const complete = digits.length === 16;
@@ -45,6 +64,10 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
       if (m === "ALREADY_ENTERED") {
         setUsed(true);
         setErr(null);
+      } else if (m === "ONLINE_TICKET") {
+        setErr(
+          "That is a ticket you bought online. It is already in the drum, so there is nothing to double. This box is for the number printed on a paper voucher from a shop."
+        );
       } else {
         setErr(m);
       }
@@ -91,11 +114,12 @@ export default function EntryNumber(props: { signedIn: boolean; campaignName?: s
             Already have a ticket?
           </h2>
           <p className="mt-2 max-w-md font-body text-body-lg text-on-primary-container">
-            Enter the number from your paper ticket. The shop copy is already in the drum, and this
-            adds a second slip with your name on it.
+            Enter the 16-digit number printed on a paper voucher from a partner shop. The shop copy
+            is already in the drum, and this adds a second slip with your name on it.
           </p>
           <p className="mt-2 font-body text-sm text-on-primary-container/70">
-            The number knows which draw it belongs to, so there is nothing else to choose.
+            The number knows which draw it belongs to, so there is nothing else to choose. Tickets
+            you bought online are already counted and cannot be entered here.
           </p>
         </div>
 
