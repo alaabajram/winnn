@@ -70,8 +70,8 @@ export default function VoucherDesigner(props: {
         <div>
           <h1 className="font-display text-display-sm text-on-background">Voucher design</h1>
           <p className="mt-2 font-body text-body-md text-on-surface-variant">
-            {VOUCHER.widthMm} x {VOUCHER.heightMm} mm, four to an A4 sheet. The preview is at real
-            size, so what you see here is what prints.
+            {VOUCHER.widthMm} x {VOUCHER.heightMm} mm, {VOUCHER.perPage} to an A4 sheet. The preview
+            is at real size, so what you see here is what prints.
           </p>
         </div>
         <div className="flex gap-3">
@@ -163,16 +163,16 @@ export default function VoucherDesigner(props: {
           <Field label="Tagline">
             <input className={FIELD} value={d.tagline} onChange={(e) => set("tagline", e.target.value)} />
           </Field>
-          <Field label="Prize label" hint="Above the plaque.">
+          <Field label="Prize pill" hint="Small label above the plaque.">
             <input className={FIELD} value={d.prizeLabel} onChange={(e) => set("prizeLabel", e.target.value)} />
           </Field>
           <Field label="Number label">
             <input className={FIELD} value={d.entryLabel} onChange={(e) => set("entryLabel", e.target.value)} />
           </Field>
-          <Field label="Prize prefix" hint="Left of the amount.">
+          <Field label="Plaque heading" hint="Above the amount, inside the plaque.">
             <input className={FIELD} value={d.prizePrefix} onChange={(e) => set("prizePrefix", e.target.value)} />
           </Field>
-          <Field label="Prize suffix" hint="Right of the amount.">
+          <Field label="Plaque heading, second line" hint="Optional. Usually left blank.">
             <input className={FIELD} value={d.prizeSuffix} onChange={(e) => set("prizeSuffix", e.target.value)} />
           </Field>
           <Field label="QR label">
