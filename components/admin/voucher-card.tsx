@@ -102,7 +102,7 @@ export function VoucherFront(props: {
       {/* ---------- SHOP ENTRY ---------- */}
       <div className="relative flex flex-col"
         style={{
-          width: mm(VOUCHER.stubMm), background: d.stubBg, color: d.stubInk,
+          width: mm(VOUCHER.stubMm), flexShrink: 0, background: d.stubBg, color: d.stubInk,
           padding: mm(4.5), borderRight: "1px dashed rgba(0,0,0,0.32)",
         }}>
         <div className="flex items-center justify-center" style={{ gap: mm(1.2) }}>
@@ -162,7 +162,8 @@ export function VoucherFront(props: {
       </div>
 
       {/* ---------- CUSTOMER COPY ---------- */}
-      <div className="relative flex flex-1 overflow-hidden" style={{ background: d.bg, color: d.ink }}>
+      <div className="relative flex flex-1 overflow-hidden"
+        style={{ background: d.bg, color: d.ink, minWidth: 0 }}>
         {d.frontImage ? (
           <img src={d.frontImage} alt=""
             className="absolute inset-0 h-full w-full object-cover" style={{ opacity: 0.3 }} />
@@ -171,7 +172,10 @@ export function VoucherFront(props: {
 
         {/* Left: brand and campaign */}
         <div className="relative flex flex-col"
-          style={{ width: mm(62), padding: mm(4), paddingRight: mm(2) }}>
+          style={{
+            width: mm(VOUCHER.brandMm), flexShrink: 0, minWidth: 0,
+            padding: mm(4), paddingRight: mm(2),
+          }}>
           {d.showLogo && props.logo ? (
             <img src={props.logo} alt="" style={{ height: mm(13), width: "auto", alignSelf: "flex-start" }} />
           ) : null}
@@ -213,7 +217,7 @@ export function VoucherFront(props: {
 
         {/* Right: prize and number */}
         <div className="relative flex flex-1 flex-col justify-center"
-          style={{ padding: mm(4), paddingLeft: mm(1) }}>
+          style={{ minWidth: 0, padding: mm(4), paddingLeft: mm(1) }}>
 
           {amount ? (
             <>
@@ -249,11 +253,11 @@ export function VoucherFront(props: {
             <span style={{ flex: 1, borderTop: "1px solid rgba(255,255,255,0.28)" }} />
           </div>
 
-          <div className="flex justify-center" style={{ gap: mm(2.2), marginTop: mm(1) }}>
+          <div className="flex justify-center" style={{ gap: mm(1.4), marginTop: mm(1) }}>
             {groups.map((g, i) => (
               <span key={i} style={{
-                fontSize: mm(6.2), fontWeight: 900, color: d.accent,
-                fontFamily: "monospace", letterSpacing: "0.01em",
+                fontSize: mm(5.2), fontWeight: 900, color: d.accent,
+                fontFamily: "monospace", letterSpacing: 0, whiteSpace: "nowrap",
               }}>
                 {g}
               </span>
@@ -270,28 +274,46 @@ export function VoucherFront(props: {
         {/* QR column - fixed width so it can never overflow */}
         {d.showQr ? (
           <div className="relative flex flex-col items-center justify-center"
-            style={{ width: mm(VOUCHER.qrMm), padding: mm(2.5), flexShrink: 0 }}>
+            style={{
+              width: mm(VOUCHER.qrMm), flexShrink: 0, flexGrow: 0, minWidth: 0,
+              padding: mm(2.5) + " " + mm(2),
+            }}>
             {props.qrSvg ? (
               <div style={{
-                width: mm(23), height: mm(23), background: "#fff",
+                width: mm(24), height: mm(24), background: "#fff",
                 padding: mm(1.2), borderRadius: mm(1.6),
               }} dangerouslySetInnerHTML={{ __html: props.qrSvg }} />
             ) : (
               <div style={{
-                width: mm(23), height: mm(23), background: "rgba(255,255,255,0.15)",
+                width: mm(24), height: mm(24), background: "rgba(255,255,255,0.15)",
                 borderRadius: mm(1.6),
               }} />
             )}
             <p style={{
-              fontSize: mm(2.3), fontWeight: 800, letterSpacing: "0.06em",
-              marginTop: mm(1.4), textAlign: "center", lineHeight: 1.2,
+              fontSize: mm(2.2), fontWeight: 800, letterSpacing: "0.05em",
+              marginTop: mm(1.2), textAlign: "center", lineHeight: 1.15,
             }}>
               {d.qrLabel}
             </p>
+
             {props.drawDate ? (
-              <p style={{ fontSize: mm(1.9), marginTop: mm(0.8), opacity: 0.7, textAlign: "center" }}>
-                Draw {props.drawDate}
-              </p>
+              <div style={{
+                marginTop: mm(1.6), textAlign: "center",
+                borderTop: "1px solid rgba(255,255,255,0.25)",
+                paddingTop: mm(1.2), width: "100%",
+              }}>
+                <p style={{
+                  fontSize: mm(1.9), fontWeight: 700, letterSpacing: "0.1em", opacity: 0.75,
+                }}>
+                  DRAW DATE
+                </p>
+                <p style={{
+                  fontSize: mm(2.9), fontWeight: 800, color: d.accent,
+                  marginTop: mm(0.4), lineHeight: 1.1,
+                }}>
+                  {props.drawDate}
+                </p>
+              </div>
             ) : null}
           </div>
         ) : null}
