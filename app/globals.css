@@ -163,3 +163,26 @@
 @media (prefers-reduced-motion: reduce) {
   .anim-bounce, .anim-ring, .anim-slide-up { animation: none; }
 }
+
+/* ---------------------------------------------------------------
+   Voucher print sheet. Four 210x74mm vouchers fill an A4 page
+   exactly, so margins are zero and each slot is a fixed height.
+   --------------------------------------------------------------- */
+.sheet { display: block; }
+.voucher-slot {
+  width: 210mm;
+  height: 74.25mm;
+  overflow: hidden;
+  border-bottom: 1px dashed #bbb;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+  html, body { background: #fff !important; margin: 0; padding: 0; }
+  .no-print, header, aside, nav { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  .voucher-slot { border-bottom: 1px dashed #ccc; }
+  .voucher { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
