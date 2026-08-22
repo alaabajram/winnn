@@ -13,7 +13,8 @@ export const VOUCHER = {
   widthMm: 210,
   heightMm: 74,
   stubMm: 60,
-  qrMm: 30,
+  brandMm: 58,
+  qrMm: 32,
   perPage: 4,
 };
 
