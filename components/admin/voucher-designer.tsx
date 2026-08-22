@@ -23,6 +23,9 @@ export default function VoucherDesigner(props: {
   const router = useRouter();
 
   const campaign = props.campaigns.find((c) => c.id === campaignId);
+  const merchant = campaign && campaign.campaign_merchants && campaign.campaign_merchants.length
+    ? campaign.campaign_merchants[0].merchants
+    : null;
   const prize = campaign && campaign.campaign_prizes && campaign.campaign_prizes.length
     ? campaign.campaign_prizes.slice().sort((a: any, b: any) => a.position - b.position)[0]
     : null;
@@ -114,9 +117,10 @@ export default function VoucherDesigner(props: {
             <VoucherFront
               d={d}
               campaign={campaign ? campaign.name : "Summer Mega Draw"}
-              prize={prize ? prize.title : "Win $100,000"}
-              prizeImage={prize ? prize.image_url : null}
-              merchant="Abou Hassan Restaurant"
+              prize={prize ? prize.title : "Grand Prize - $100,000 cash"}
+              prizeValueCents={prize ? prize.value_cents : null}
+              merchant={merchant ? merchant.name : "Abou Hassan Restaurant"}
+              merchantLogo={merchant ? merchant.logo_url : null}
               logo={props.settings.logo_url}
               serial={SAMPLE_SERIAL}
               entryNumber={SAMPLE_ENTRY}
@@ -135,6 +139,7 @@ export default function VoucherDesigner(props: {
             { k: "bg", label: "Background" },
             { k: "ink", label: "Text" },
             { k: "accent", label: "Highlight" },
+            { k: "accentDeep", label: "Highlight, deep" },
             { k: "stubBg", label: "Stub background" },
           ].map((c) => (
             <Field key={c.k} label={c.label}>
@@ -150,26 +155,53 @@ export default function VoucherDesigner(props: {
       </Section>
 
       <Section title="Front text">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Headline" hint="Small, above the prize.">
-            <input className={FIELD} value={d.headline} onChange={(e) => set("headline", e.target.value)} />
+        <p className="mb-5 font-body text-body-md text-on-surface-variant">
+          The campaign name, prize, ticket number, merchant name and logo are pulled automatically.
+          These are the fixed labels around them.
+        </p>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <Field label="Tagline">
+            <input className={FIELD} value={d.tagline} onChange={(e) => set("tagline", e.target.value)} />
           </Field>
-          <Field label="Sub-headline">
-            <input className={FIELD} value={d.subheadline} onChange={(e) => set("subheadline", e.target.value)} />
+          <Field label="Prize label" hint="Above the plaque.">
+            <input className={FIELD} value={d.prizeLabel} onChange={(e) => set("prizeLabel", e.target.value)} />
           </Field>
           <Field label="Number label">
             <input className={FIELD} value={d.entryLabel} onChange={(e) => set("entryLabel", e.target.value)} />
           </Field>
-          <Field label="Call to action">
-            <input className={FIELD} value={d.ctaText} onChange={(e) => set("ctaText", e.target.value)} />
+          <Field label="Prize prefix" hint="Left of the amount.">
+            <input className={FIELD} value={d.prizePrefix} onChange={(e) => set("prizePrefix", e.target.value)} />
+          </Field>
+          <Field label="Prize suffix" hint="Right of the amount.">
+            <input className={FIELD} value={d.prizeSuffix} onChange={(e) => set("prizeSuffix", e.target.value)} />
+          </Field>
+          <Field label="QR label">
+            <input className={FIELD} value={d.qrLabel} onChange={(e) => set("qrLabel", e.target.value)} />
+          </Field>
+          <Field label="Call to action, before">
+            <input className={FIELD} value={d.ctaBefore} onChange={(e) => set("ctaBefore", e.target.value)} />
+          </Field>
+          <Field label="Emphasised word">
+            <input className={FIELD} value={d.ctaEmphasis} onChange={(e) => set("ctaEmphasis", e.target.value)} />
+          </Field>
+          <Field label="Call to action, after">
+            <input className={FIELD} value={d.ctaAfter} onChange={(e) => set("ctaAfter", e.target.value)} />
+          </Field>
+          <Field label="Stub title">
+            <input className={FIELD} value={d.stubTitle} onChange={(e) => set("stubTitle", e.target.value)} />
+          </Field>
+          <Field label="Partner label">
+            <input className={FIELD} value={d.partnerLabel} onChange={(e) => set("partnerLabel", e.target.value)} />
           </Field>
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-5">
+        <div className="mt-6 flex flex-wrap gap-4">
           {[
-            { k: "showQr", label: "Show QR code" },
-            { k: "showLogo", label: "Show logo" },
-            { k: "showPrizeImage", label: "Show prize photo when no QR" },
+            { k: "showQr", label: "QR code" },
+            { k: "showLogo", label: "Winnn logo" },
+            { k: "showWriteIn", label: "Name and mobile lines on the stub" },
+            { k: "showPartner", label: "Merchant panel" },
+            { k: "showConfetti", label: "Confetti" },
           ].map((t) => (
             <label key={t.k} className="flex items-center gap-2 rounded-xl bg-surface-container px-4 py-3">
               <input type="checkbox" className="h-5 w-5" checked={!!d[t.k]}
@@ -179,7 +211,8 @@ export default function VoucherDesigner(props: {
           ))}
         </div>
         <p className="mt-3 font-body text-sm text-on-surface-variant">
-          The QR opens the app with the number already filled in, so a customer scans and taps once.
+          The write-in lines matter: a shop can note the buyer's name and number, so an unclaimed
+          winning ticket can still be traced to a person.
         </p>
       </Section>
 
