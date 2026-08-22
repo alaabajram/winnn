@@ -159,7 +159,9 @@ export default async function Deals(props: any) {
       </div>
 
       <div className="mt-10">
-        <EntryNumber signedIn={signedIn} />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-[24px] bg-surface-container" />}>
+          <EntryNumber signedIn={signedIn} />
+        </Suspense>
       </div>
 
       {past.length > 0 ? (
