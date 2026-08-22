@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { dateFmt } from "@/lib/format";
@@ -101,7 +102,9 @@ export default async function MyTickets() {
       )}
 
       <div className="mt-8">
-        <EntryNumber signedIn />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-[24px] bg-surface-container" />}>
+          <EntryNumber signedIn />
+        </Suspense>
       </div>
     </div>
   );
