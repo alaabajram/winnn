@@ -35,7 +35,7 @@ export default async function Campaign(props: any) {
 
   const { data } = await sb
     .from("campaigns")
-    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,hero_image_url,is_nationwide,districts(name),campaign_prizes(position,title,value_cents,image_url),campaign_products(tickets_per_unit,is_primary,sort_order,products(id,name,slug,description,price_cents,stock,images,status)),campaign_merchants(merchants(name,category,address,logo_url,map_url,districts(name)))")
+    .select("id,name,slug,description,type,terms,draw_date,sales_close_at,hero_image_url,is_nationwide,districts!campaigns_district_id_fkey(name),campaign_prizes(position,title,value_cents,image_url),campaign_products(tickets_per_unit,is_primary,sort_order,products(id,name,slug,description,price_cents,stock,images,status)),campaign_merchants(merchants(name,category,address,logo_url,map_url,districts(name)))")
     .eq("slug", params.slug)
     .maybeSingle();
   if (!data) notFound();
