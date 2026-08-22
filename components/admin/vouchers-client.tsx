@@ -96,12 +96,18 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-display-sm text-on-background">Vouchers</h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-display-sm text-on-background">Vouchers</h1>
         <p className="mt-2 font-body text-body-md text-on-surface-variant">
           Physical voucher stock for in-store campaigns. Each voucher has a public serial and a
-          secret code; only the pair together can be redeemed.
-        </p>
+          16-digit number. Design the artwork once, then print per batch.
+          </p>
+        </div>
+        <a href="/admin/vouchers/design"
+          className="rounded-xl border border-outline-variant/40 px-5 py-3 font-label text-label-bold uppercase tracking-widest text-on-surface hover:bg-surface-container">
+          Design voucher
+        </a>
       </div>
 
       {msg ? <Banner kind={msg.kind}>{msg.text}</Banner> : null}
@@ -200,6 +206,10 @@ export default function VouchersClient(props: { batches: any[]; campaigns: any[]
                           Distributed
                         </button>
                       ) : null}
+                      <a href={"/admin/vouchers/print/" + b.id} target="_blank" rel="noreferrer"
+                        className="rounded-lg bg-primary-container px-2 py-1 font-label text-[11px] font-semibold text-secondary-fixed">
+                        Print
+                      </a>
                       <button onClick={() => exportNumbers(b.id, b.serial_from)}
                         className="rounded-lg border border-outline-variant/40 px-2 py-1 font-label text-[11px] font-semibold hover:bg-surface-container">
                         Numbers
