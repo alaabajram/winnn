@@ -1,16 +1,20 @@
 /**
  * Voucher design.
  *
- * Size: 190 x 120 mm, two to an A4 sheet. The reference artwork is close to
- * 3:2, and squeezing that into a letterbox strip would crush the prize
- * plaque and the ticket number - the two things the whole voucher exists to
- * communicate. Two per sheet costs more paper than four and is worth it.
+ * Size: 210 x 74 mm - full A4 width, exactly a quarter of its height, so
+ * four fit a sheet with no waste and a single straight cut between each.
+ *
+ * At this height the customer half runs as two columns rather than one
+ * stack: branding on the left, prize and number on the right. A single
+ * vertical stack does not fit 74mm without shrinking the ticket number,
+ * which is the one thing that must stay readable.
  */
 export const VOUCHER = {
-  widthMm: 190,
-  heightMm: 120,
-  stubMm: 62,
-  perPage: 2,
+  widthMm: 210,
+  heightMm: 74,
+  stubMm: 60,
+  qrMm: 30,
+  perPage: 4,
 };
 
 export type VoucherDesign = {
@@ -56,16 +60,16 @@ export const DEFAULT_DESIGN: VoucherDesign = {
   backImage: "",
 
   tagline: "PLAY. SHOP. WIN.",
-  prizeLabel: "YOU COULD",
-  prizePrefix: "WIN",
-  prizeSuffix: "UP TO",
+  prizeLabel: "WIN",
+  prizePrefix: "GRAND PRIZE",
+  prizeSuffix: "",
   entryLabel: "YOUR TICKET NUMBER",
   ctaBefore: "Enter this number in the app to",
   ctaEmphasis: "DOUBLE",
   ctaAfter: "your chance",
   qrLabel: "SCAN TO ENTER",
   partnerLabel: "IN PARTNERSHIP WITH",
-  stubTitle: "SHOP COPY",
+  stubTitle: "SHOP ENTRY",
 
   backTitle: "How to double your chance",
   backBody:
